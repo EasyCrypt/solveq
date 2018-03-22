@@ -43,7 +43,7 @@ type mon = Num.num * int list;;
 type pol = mon list;;
 
 type i_var_set = int list;;
-  
+
 (* ------------------------------------------------------------------------- *)
 (* Operations on monomials.                                                  *)
 (* ------------------------------------------------------------------------- *)
@@ -71,7 +71,7 @@ let morder_lt m1 m2 =
 (* Arithmetic on canonical multivariate polynomials.                         *)
 (* ------------------------------------------------------------------------- *)
 
-let mpoly_mmul vars mp k_fQ cm (pol:pol) :pol= (map (mmul cm) pol);;
+let mpoly_mmul vars mp cm (pol:pol) :pol= (map (mmul cm) pol);;
 
 let mpoly_neg (pol:pol) :pol= (map (fun (c,m) -> (minus_num c,m)) pol);;
 
@@ -84,10 +84,10 @@ let rec mpoly_add (l1:pol) (l2:pol):pol =
   | (l1,[]) -> l1
   | ((c1,m1)::o1,(c2,m2)::o2) ->
         if m1 = m2 then
-          let c = c1+/c2 and rest = mpoly_add_aux o1 o2 in
+          let c = c1+/c2 and rest = mpoly_add o1 o2 in
           if c = Num.Int 0 then rest else (c,m1)::rest
-        else if morder_lt m2 m1 then (c1,m1)::(mpoly_add_aux o1 l2)
-        else (c2,m2)::(mpoly_add_aux l1 o2);;
+        else if morder_lt m2 m1 then (c1,m1)::(mpoly_add o1 l2)
+        else (c2,m2)::(mpoly_add l1 o2);;
 
 let mpoly_sub l1 l2 = mpoly_add l1 (mpoly_neg l2);;
 
@@ -95,41 +95,41 @@ let mpoly_sub l1 l2 = mpoly_add l1 (mpoly_neg l2);;
 (* Reduce monomial cm by polynomial pol, returning replacement for cm.       *)
 (* ------------------------------------------------------------------------- *)
 
-let reduce1 vars mp k_fQ cm (pol,pvars) =
+let reduce1 vars mp cm pol =
   match pol with
     [] -> failwith "reduce1"
-  | hm::cms -> let c,m = mdiv pvars cm hm in mpoly_mmul vars mp k_fQ (minus_num c,m) (cms);;
+  | hm::cms -> let c,m = mdiv mp cm hm in mpoly_mmul vars mp (minus_num c,m) (cms);;
 
 (* ------------------------------------------------------------------------- *)
 (* Try this for all polynomials in a basis.                                  *)
 (* ------------------------------------------------------------------------- *)
 
-let reduceb vars mp k_fQ cm pols = let res = tryfind (reduce1 vars mp k_fQ cm) pols in
+let reduceb vars mp cm pols = let res = tryfind (reduce1 vars mp cm) pols in
                                               res;;
 
 (* ------------------------------------------------------------------------- *)
 (* Reduction of a polynomial (always picking largest monomial possible).     *)
 (* ------------------------------------------------------------------------- *)
 
-let rec reduce vars mp k_fQ pols pol=
+let rec reduce vars mp pols pol=
   match pol with
     [] -> []
-  | cm::ptl -> try reduce vars mp k_fQ pols (mpoly_add (reduceb  vars mp k_fQ cm pols) ptl)
-               with Failure _ -> let pol = (reduce  vars mp k_fQ pols ptl) in
+  | cm::ptl -> try reduce vars mp pols (mpoly_add (reduceb  vars mp cm pols) ptl)
+               with Failure _ -> let pol = (reduce  vars mp pols ptl) in
                                  cm::pol;;
 
 (* ------------------------------------------------------------------------- *)
 (* Compute S-polynomial of two polynomials.                                  *)
 (* ------------------------------------------------------------------------- *)
 
-let spoly vars mp k_fQ  (pol1,pvar1) (pol2,pvar2) :pol=
+let spoly vars mp  pol1 pol2 :pol=
   match (pol1,pol2) with
     ([],_) -> []
   | (_,[]) -> []
   | (m1::ptl1,m2::ptl2) ->
      let m = mlcm m1 m2 in
-        let res = mpoly_sub (mpoly_mmul vars mp k_fQ  (mdiv pvar1 m m1) ptl1)
-                            (mpoly_mmul vars mp k_fQ  (mdiv pvar2 m m2) ptl2) in
+        let res = mpoly_sub (mpoly_mmul vars mp  (mdiv mp m m1) ptl1)
+                            (mpoly_mmul vars mp  (mdiv mp m m2) ptl2) in
         res;;
 
 (* ------------------------------------------------------------------------- *)
@@ -137,27 +137,45 @@ let spoly vars mp k_fQ  (pol1,pvar1) (pol2,pvar2) :pol=
 (* ------------------------------------------------------------------------- *)
   
   
-let rec grobner vars mp k_fQ basis pairs =
+let rec grobner vars mp basis pairs =
   match pairs with
     [] -> basis
   | (p1,p2)::opairs ->
         try
-          let sp = reduce vars mp k_fQ basis (spoly vars mp k_fQ p1 p2) in
-          if sp = [] then grobner vars mp k_fQ basis opairs                              
+          let sp = reduce vars mp basis (spoly vars mp p1 p2) in
+          if sp = [] then grobner vars mp basis opairs                              
           else 
-            let sp_pvars = map2 (fun x y -> x +y - x*y) (snd p1) (snd p2) in
-            let newcps = map (fun p -> p,(sp,sp_pvars)) basis in
-              grobner vars mp k_fQ ((sp,sp_pvars)::basis) (opairs @ newcps)    
-        with Failure _ -> grobner vars mp k_fQ basis opairs;;
+            let newcps = map (fun p -> p,sp) basis in
+              grobner vars mp (sp::basis) (opairs @ newcps)    
+        with Failure _ -> grobner vars mp basis opairs;;
   
 (* ------------------------------------------------------------------------- *)
 (* Overall function.                                                         *)
 (* ------------------------------------------------------------------------- *)
 
-let groebner vars mp k_fQ basis = grobner vars mp k_fQ basis (distinctpairs basis);;
+let groebner vars mp basis = grobner vars mp basis (distinctpairs basis);;
 
-let is_deduc vars mp k_fQ basis (pol:pol) =
-  let red =  reduce vars mp k_fQ basis pol in
+let is_deduc vars mp basis (pol:pol) =
+  let red =  reduce vars mp basis pol in
                        red= [];;
 
-groebmer [a,b,c]
+  
+(* ------------------------------------------------------------------------- *)
+(* Examples.                                                                 *)
+(* ------------------------------------------------------------------------- *)
+
+let x = 'x' and y = 'y' and z = 'z';;
+let vars = [x;y;z];;
+
+let mp = [1;1;0];; (* only z is fully known, and only g^x and g^y are known *)
+
+let m1 = [(Num.Int 1,[1;0;0])];; (* x *)
+let m2 = [(Num.Int 1,[0;1;0])];; (* y *)
+let m3 = [(Num.Int 1,[0;0;1])];; (* z *)
+let m4 = [(Num.Int 1,[1;1;0])];; (* xy *)
+let m5 = [(Num.Int 1,[0;1;1])];; (* yz *)
+
+let p1 = mpoly_add m4 m2;; (* xy+y*)
+
+let gb = groebner vars mp ([p1;m4]);;
+is_deduc vars mp gb m5;;
