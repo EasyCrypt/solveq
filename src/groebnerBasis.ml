@@ -1,37 +1,10 @@
 (* Grobner basis computations for K[X]-module *)
-#use "topfind";;
-#require "num";;
 
 (* Imports and abbreviations *)
     
 open List;;
 open Num;;
-
-(* ------------------------------------------------------------------------- *)
-(*  Utility functions                                                        *)
-(* ------------------------------------------------------------------------- *)
-  
-let rec itlist f l b =
-  match l with
-    [] -> b
-  | (h::t) -> f h (itlist f t b);;
-
-let rec lexord ord l1 l2 =
-  match (l1,l2) with
-    (h1::t1,h2::t2) -> if ord h1 h2 then length t1 = length t2
-                       else h1 = h2 && lexord ord t1 t2
-  | _ -> false;;
-
-let rec tryfind f l =
-  match l with
-      [] -> failwith "tryfind"
-    | (h::t) -> try f h with Failure _ -> tryfind f t;;
-
-
-let rec distinctpairs l =
-  match l with
-   x::t -> itlist (fun y a -> (x,y) :: a) t (distinctpairs t)
-  | [] -> [];;
+open Utils;;
 
 
 (* ------------------------------------------------------------------------- *)
@@ -160,22 +133,6 @@ let is_deduc vars mp basis (pol:pol) =
                        red= [];;
 
   
-(* ------------------------------------------------------------------------- *)
-(* Examples.                                                                 *)
-(* ------------------------------------------------------------------------- *)
 
-let x = 'x' and y = 'y' and z = 'z';;
-let vars = [x;y;z];;
 
-let mp = [1;1;0];; (* only z is fully known, and only g^x and g^y are known *)
 
-let m1 = [(Num.Int 1,[1;0;0])];; (* x *)
-let m2 = [(Num.Int 1,[0;1;0])];; (* y *)
-let m3 = [(Num.Int 1,[0;0;1])];; (* z *)
-let m4 = [(Num.Int 1,[1;1;0])];; (* xy *)
-let m5 = [(Num.Int 1,[0;1;1])];; (* yz *)
-
-let p1 = mpoly_add m4 m2;; (* xy+y*)
-
-let gb = groebner vars mp ([p1;m4]);;
-is_deduc vars mp gb m5;;

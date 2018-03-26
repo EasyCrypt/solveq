@@ -1,0 +1,6 @@
+PRJ solveq
+S src
+
+PKG num
+
+B _build/src
