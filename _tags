@@ -1,2 +1,12 @@
-<src/**>: include
+# --------------------------------------------------------------------
+true : debug
+true : warn_a
+true : -traverse
+true : bin_annot
 
+# --------------------------------------------------------------------
+<src> : include
+
+# --------------------------------------------------------------------
+<src/*.{ml,mli}> : package(batteries,num)
+<tests/*.{ml,mli}> : package(batteries,num)

@@ -1,6 +1,10 @@
 PRJ solveq
+
 S src
-
-PKG num
-
 B _build/src
+
+FLG -rectypes
+FLG -w a
+
+PKG batteries
+PKG num

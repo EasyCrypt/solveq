@@ -6,6 +6,6 @@ type i_var_set = int list
 
 val mpoly_add : pol -> pol -> pol 
 
-val groebner : 'a -> i_var_set -> mon list list -> mon list list 
-val is_deduc : 'a -> i_var_set -> mon list list -> pol -> bool 
+val groebner : i_var_set -> mon list list -> mon list list 
+val is_deduc : i_var_set -> mon list list -> pol -> bool 
  

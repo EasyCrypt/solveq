@@ -1,11 +1,10 @@
 (* Grobner basis computations for K[X]-module *)
 
-  #use "topfind";;
+#use "topfind";;
 #require "num";;
-#cd "_build/src/";;
-#load "utils.cmo";;
-#load "groebnerBasis.cmo";;
-#load "nc_gasbi.cmo";;
+#require "batteries";;
+#cd "../_build/src/";;
+#load "libsolveq.cma";;
 
 open GroebnerBasis
 
@@ -26,10 +25,8 @@ let m5 = [(Num.Int 1,[0;1;1])];; (* yz *)
 
 let p1 = mpoly_add m4 m2;; (* xy+y *)
 
-let gb = groebner vars mp ([p1;m4]);;
-is_deduc vars mp gb m5;;
-
-
+let gb = groebner mp ([p1;m4]);;
+is_deduc mp gb m5;;
 
 open Nc_gasbi;;
 
@@ -70,3 +67,12 @@ inverter [m2] lb;;
 inverter [m3] lb;;
 inverter [m4] lb;;
 inverter [m5] lb;;
+
+
+mpoly_muls  [[{coeff = Int 1; vars = [1]; length = 1; size = (2, 2)};
+    {coeff = Int (-1); vars = [-1]; length = 0; size = (-1, -1)};
+    {coeff = Int 1; vars = [-2]; length = 0; size = (-1, -1)}];
+   [{coeff = Int 1; vars = [1]; length = 1; size = (2, 2)};
+    {coeff = Int (-1); vars = [-1]; length = 0; size = (-1, -1)};
+    {coeff = Int 1; vars = [-2]; length = 0; size = (-1, -1)}]];;
+

@@ -1,35 +1,34 @@
 (* Grobner basis computations for K[X]-module *)
 
 (* Imports and abbreviations *)    
-open List;;
-open Num;;
-open Utils;;
+open Utils
+open Num.TaggedInfix
 
 (* ------------------------------------------------------------------------- *)
 (* Defining polynomial types                                                 *)
 (* ------------------------------------------------------------------------- *)
 
-type id_var = int;;
+type id_var = int
 
-type id_size = int;;
+type id_size = int
 
-type vars = id_var list;;
+type vars = id_var list
 
 type mon =
   { coeff : Num.num;
     vars : vars;
     length : int;
     size : id_size * id_size;
-  };;
+  }
 
-type pol = mon list;;
+type pol = mon list
 
 (* type pol_i = mon list * Expr.expr; *)
 
-type i_var_set = int list;;
+type i_var_set = int list
 
 let mk_vmon (i:id_var) (size: id_size*id_size) :mon=
-  {coeff = Num.Int 1; vars = [i]; length = 1; size};;
+  {coeff = Num.Int 1; vars = [i]; length = 1; size}
 
 let is_null_mon (m:mon) =
    m.length=0 || (List.for_all (fun var -> var<0) m.vars)
@@ -65,13 +64,13 @@ let null_mon =
     vars = [];
     length = 0;
     size = (1,1);
-  };;
+  }
 (* ------------------------------------------------------------------------- *)
 (* Operations on monomials.                                                  *)
 (* ------------------------------------------------------------------------- *)
 
 let veq_mon (m1:mon) (m2:mon) =
-  (m1.length = m2.length ) && m1.vars=m2.vars;;
+  (m1.length = m2.length ) && m1.vars=m2.vars
 
 let mmul (m1:mon) (m2:mon) :mon  =
   if snd(m1.size) = fst(m2.size) then
@@ -85,9 +84,9 @@ let mmul (m1:mon) (m2:mon) :mon  =
  else if m1.size=(-1,-1) then
    null_mon 
  else
-   failwith "Monoms sizes uncompatible";;
+   failwith "Monoms sizes uncompatible"
 
-exception NotPrefix;;
+exception NotPrefix
 
 let rec is_prefix (m1:id_var list) (m2:id_var list) =
   match (m1,m2) with
@@ -97,7 +96,7 @@ let rec is_prefix (m1:id_var list) (m2:id_var list) =
     |(p1::q1,p2::q2) -> if p1 = p2 then 
                             is_prefix q1 q2
                         else
-                           raise NotPrefix;;
+                           raise NotPrefix
 
 
 (* ------------------------------------------------------------------------- *)
@@ -105,19 +104,20 @@ let rec is_prefix (m1:id_var list) (m2:id_var list) =
 (* ------------------------------------------------------------------------- *)
 
 let morder_lt m1 m2 =
-   m1.length < m2.length || (m1.length = m2.length &&  lexord_lt(<) m1.vars m2.vars);;
+   m1.length < m2.length || (m1.length = m2.length &&  lexord_lt(<) m1.vars m2.vars)
 
 (* ------------------------------------------------------------------------- *)
 (* Arithmetic on canonical multivariate polynomials.                         *)
 (* ------------------------------------------------------------------------- *)
 
 let mpoly_cmul c (pol:pol) :pol =
-  if c = Int 0 then []
-  else map (fun m -> {m with coeff=c*/m.coeff}) pol;;
+  if c =/ Int 0 then []
+  else List.map (fun m -> {m with coeff=c*/m.coeff}) pol
 
-let mpoly_mmul cm (pol:pol) :pol = map (mmul cm) pol;;
+let mpoly_mmul cm (pol:pol) :pol = List.map (mmul cm) pol
 
-let mpoly_neg (pol) :pol = map (fun m -> {m with coeff=minus_num m.coeff}) pol ;;
+let mpoly_neg (pol) :pol =
+  List.map (fun m -> {m with coeff=Num.minus_num m.coeff}) pol 
 
 let rec remove_null_mon (p:pol) =
   match p with
@@ -125,7 +125,7 @@ let rec remove_null_mon (p:pol) =
   |m::q -> if m.coeff = Int 0 then
              remove_null_mon q
            else
-             m::(remove_null_mon q);;
+             m::(remove_null_mon q)
 
 let rec mpoly_add (l1:pol) (l2:pol):pol =
   match (l1,l2) with
@@ -137,7 +137,7 @@ let rec mpoly_add (l1:pol) (l2:pol):pol =
           if c = Num.Int 0 then rest
           else {m1 with coeff=c}::rest
         else if morder_lt m2 m1 then m1::(mpoly_add o1 l2)
-        else m2::(mpoly_add l1 o2);;
+        else m2::(mpoly_add l1 o2)
 
 
 let mpoly_mul l1 l2 =
@@ -148,30 +148,21 @@ let mpoly_mul l1 l2 =
      |(p::q,l2) ->mpoly_add (mpoly_mmul p l2) (aux_mul q l2) in
   match (is_null l1, is_null l2) with
           |(false,false) ->  aux_mul l1 l2
-          |_,_ -> [];;
+          |_,_ -> []
 
 
-let mpoly_sub l1 l2 = mpoly_add l1 (mpoly_neg l2);;
+let mpoly_sub l1 l2 = mpoly_add l1 (mpoly_neg l2)
 
 let polys_mul (l:pol list) =
   match l with
   |[] -> []
   |p::pols ->
-    List.fold_right (fun pol acc -> mpoly_mul pol acc) pols p;;
+    List.fold_right (fun pol acc -> mpoly_mul pol acc) pols p
 
-let mpoly_muls ps = 
+let mpoly_muls (ps : pol list) =
   match ps with
   | []      -> []
-  | p :: ps -> 
-     List.fold_left (fun p acc -> mpoly_mul p acc ) p ps;;
-
-
-mpoly_muls  [[{coeff = Int 1; vars = [1]; length = 1; size = (2, 2)};
-    {coeff = Int (-1); vars = [-1]; length = 0; size = (-1, -1)};
-    {coeff = Int 1; vars = [-2]; length = 0; size = (-1, -1)}];
-   [{coeff = Int 1; vars = [1]; length = 1; size = (2, 2)};
-    {coeff = Int (-1); vars = [-1]; length = 0; size = (-1, -1)};
-    {coeff = Int 1; vars = [-2]; length = 0; size = (-1, -1)}]];;
+  | p :: ps -> List.fold_left mpoly_mul p ps
 
 let s_poly (p1:pol) (p2:pol) =
   match (p1,p2) with
@@ -180,7 +171,7 @@ let s_poly (p1:pol) (p2:pol) =
   |m1::_,m2::_-> match (m1.coeff,m2.coeff) with
                     |Int 0,_ -> p2
                     |_, Int 0 -> p1
-                    |c1,c2 -> mpoly_sub p1 (mpoly_cmul (c1//c2) p2);;
+                    |c1,c2 -> mpoly_sub p1 (mpoly_cmul (c1//c2) p2)
 (* ------------------------------------------------------------------------- *)
 
 module DBase : sig 
@@ -290,7 +281,7 @@ let rec get_all_products (m:vars) (polys:DBase.t) : pol list list =
          let sols = List.flatten sols in
          sols@(sub_sol m q)
   in
-  sub_sol m (DBase.get_all_prefix_lt polys m);;
+  sub_sol m (DBase.get_all_prefix_lt polys m)
 
 (* ------------------------------------------------------------------------- *)
 (* Computation of critical pairs.                                            *)
@@ -324,7 +315,7 @@ let rec monom_critical_pairs (m:vars) (polys:DBase.t) : (pol list * pol list) li
                           sub_sol q sufs
     in
     let sols = sub_sol (DBase.get_all_prefix_lt polys m) ((DBase.get_all_prefix_gt polys m)) in
-    sols;;
+    sols
 
 
 (* ------------------------------------------------------------------------- *)
@@ -337,10 +328,8 @@ let new_Spolys (p:pol)  (polys:DBase.t) : pol list =
   |None -> []
   |Some mon ->
     let pairs = monom_critical_pairs mon.vars polys in 
-    List.map (fun (ps1,ps2) -> s_poly (mpoly_muls ps1) (mpoly_muls (p::ps2)) ) pairs;;
-   
-
-
+    List.map (fun (ps1,ps2) ->
+        s_poly (mpoly_muls ps1) (mpoly_muls (p::ps2))) pairs
 
 (* ------------------------------------------------------------------------- *)
 (* Computation of the S polynoms.                                            *)
@@ -362,7 +351,7 @@ let reduce_1 (p:pol) (polys:DBase.t) =
         | None    -> p 
         | Some m1 -> mpoly_sub p (mpoly_cmul (m.coeff//m1.coeff) prod) in
       List.map sub_prod prods
-      );;
+      )
 
               
 (* compute all the possible reductions of p wrt polys *)
@@ -376,7 +365,7 @@ let rec reduce (p:pol) (polys:DBase.t)=
     |[q] -> if equals p q then [p]
             else
               List.flatten (List.map (fun p -> reduce p polys) reduced_1)
-    |_ ->  List.flatten (List.map (fun p -> reduce p polys) reduced_1);;
+    |_ ->  List.flatten (List.map (fun p -> reduce p polys) reduced_1)
 
 
 (* ------------------------------------------------------------------------- *)
@@ -411,7 +400,7 @@ let deduce (p:pol) (polys:pol list)=
                           ) s_polys [] in
           aux p base (accs @ new_acc)
       ) in
-  aux p (DBase.from_list polys) polys;;
+  aux p (DBase.from_list polys) polys
     
 
 
@@ -446,7 +435,7 @@ let deduce (p:pol) (polys:pol list)=
                              
                           ) s_polys [] in
           aux_get_inv p base (accs @ new_acc)
-      );;
+      )
 
 
 let inverter (p:pol) (polys:pol list)=
@@ -456,4 +445,4 @@ let inverter (p:pol) (polys:pol list)=
                 pol@[{coeff=Num.Int 1; vars=[!acc]; size=(-1,-1);length=0}]) polys
   in
   let inv = aux_get_inv p (DBase.from_list polys) polys in
-  mpoly_cmul (Int (-1)) inv;;
+  mpoly_cmul (Int (-1)) inv

@@ -1,7 +1,5 @@
-open List;;
-(* ------------------------------------------------------------------------- *)
-(*  Utility functions                                                        *)
-(* ------------------------------------------------------------------------- *)
+(* -------------------------------------------------------------------- *)
+open List
   
 let rec itlist f l b =
   match l with
@@ -23,14 +21,29 @@ let rec lexord_lt ord l1 l2 =
    | (h1::t1,h2::t2) -> if ord h1 h2 then true
                        else h1 = h2 && lexord_lt ord t1 t2;;
 
-let rec tryfind f l =
-  match l with
-      [] -> failwith "tryfind"
-    | (h::t) -> try f h with Failure _ -> tryfind f t;;
-
-
 let rec distinctpairs l =
   match l with
    x::t -> itlist (fun y a -> (x,y) :: a) t (distinctpairs t)
   | [] -> [];;
 
+(* -------------------------------------------------------------------- *)
+include BatPervasives
+
+(* -------------------------------------------------------------------- *)
+module String = BatString
+module Int    = BatInt
+module Ord    = BatOrd
+
+(* -------------------------------------------------------------------- *)
+module List : sig
+  include module type of BatList
+
+  val lex : ('a -> 'a -> int) -> 'a list -> 'a list -> int
+end = struct
+  include BatList
+
+  let lex = BatList.compare
+end
+
+(* -------------------------------------------------------------------- *)
+module Num = BatNum
