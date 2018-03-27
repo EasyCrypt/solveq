@@ -35,10 +35,15 @@ examples: byte
 	cd tests && ocaml -rectypes examples.ml
 
 install: native
-	@true
+	ocamlfind install libsolveq META \
+	  _build/src/$(MAIN).cma \
+	  _build/src/$(MAIN).cmxa \
+	  _build/src/$(MAIN).a \
+	  _build/src/*.cmi \
+	  _build/src/*.cmx
 
 uninstall:
-	@true
+	ocamlfind remove libsolveq
 
 clean:
 	$(OCAMLBUILD) -clean

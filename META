@@ -1,0 +1,6 @@
+name="libsolveq"
+description=""
+version="0.1"
+requires="num,batteries"
+archive(byte)="libsolveq.cma"
+archive(native)="libsolveq.cmxa"
