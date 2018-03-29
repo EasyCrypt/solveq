@@ -1,6 +1,4 @@
 (* -------------------------------------------------------------------- *)
-open List
-  
 let rec itlist f l b =
   match l with
     [] -> b
@@ -8,7 +6,7 @@ let rec itlist f l b =
 
 let rec lexord ord l1 l2 =
   match (l1,l2) with
-    (h1::t1,h2::t2) -> if ord h1 h2 then length t1 = length t2
+    (h1::t1,h2::t2) -> if ord h1 h2 then List.length t1 = List.length t2
                        else h1 = h2 && lexord ord t1 t2
   | _ -> false;;
 
@@ -33,6 +31,10 @@ include BatPervasives
 module String = BatString
 module Int    = BatInt
 module Ord    = BatOrd
+module Set    = BatSet
+module Map    = BatMap
+module Num    = BatNum
+module Opt    = BatOption
 
 (* -------------------------------------------------------------------- *)
 module List : sig
@@ -44,6 +46,3 @@ end = struct
 
   let lex = BatList.compare
 end
-
-(* -------------------------------------------------------------------- *)
-module Num = BatNum
