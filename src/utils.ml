@@ -46,3 +46,11 @@ end = struct
 
   let lex = BatList.compare
 end
+
+(* -------------------------------------------------------------------- *)
+module Format = struct
+  include Format
+
+  type 'a pp = Format.formatter -> 'a -> unit
+end
+

@@ -29,11 +29,30 @@ module type Ring = sig
 end
 
 (* -------------------------------------------------------------------- *)
+module IntRing : Ring with type t = Big_int.big_int = struct
+
+  type t = Big_int.big_int
+
+  let zero : t = Big_int.zero_big_int
+  let unit : t = Big_int.unit_big_int
+
+  let ( +! ) = Big_int.add_big_int
+  let ( -! ) = Big_int.sub_big_int
+  let ( ~! ) = Big_int.minus_big_int
+  let ( *! ) = Big_int.mult_big_int
+
+  let eq = Big_int.eq_big_int
+  let compare = Big_int.compare_big_int
+end
+
+(* -------------------------------------------------------------------- *)
 module Monom : sig
   include Monoid
 
   val ofnat : int -> t
   val tonat : t -> int
+
+  val pp : string -> t Format.pp
 end = struct
   type t = Monom of int
 
@@ -54,6 +73,12 @@ end = struct
 
   let compare =
     (Pervasives.compare : t -> t -> int)
+
+  let pp (x : string) (fmt : Format.formatter) (Monom m) =
+    match m with
+    | _ when m <= 0 -> ()
+    | 1 -> Format.pp_print_string fmt x
+    | _ -> Format.fprintf fmt "%s^%d" x m
 end
 
 (* -------------------------------------------------------------------- *)
@@ -69,6 +94,10 @@ module Multinom(X : Var) : sig
   include Monoid
 
   val getpow : t -> X.t -> int
+  val ofvar  : X.t -> t
+  val ofmap  : int Map.Make(X).t -> t
+
+  val pp : X.t Format.pp -> t Format.pp
 end = struct
   module M = Map.Make(X)
 
@@ -76,6 +105,12 @@ end = struct
 
   let getpow (m : t) (i : X.t) =
     M.find_default 0 i m
+
+  let ofvar (x : X.t) =
+    M.singleton x 1
+
+  let ofmap (m : int M.t) : t =
+    M.filter (fun _ i -> 0 < i) m
 
   let unit : t =
     M.empty
@@ -96,6 +131,15 @@ end = struct
 
   let compare (m1 : t) (m2 : t) =
     M.compare (Pervasives.compare) m1 m2
+
+  let pp (ppx : X.t Format.pp) (fmt : Format.formatter) (m : t) =
+    let ppcx fmt (x, c) =
+      if   c = 1
+      then Format.fprintf fmt "%a" ppx x
+      else Format.fprintf fmt "%a^%d" ppx x c in
+
+    Format.pp_print_list ~pp_sep:(fun _ () -> ())
+      ppcx fmt (M.bindings m)
 end
 
 (* -------------------------------------------------------------------- *)
@@ -104,6 +148,8 @@ module Seqnom(X : Var) : sig
 
   val oflist : X.t list -> t
   val tolist : t -> X.t list
+
+  val pp : X.t Format.pp -> t Format.pp
 end = struct
   type t = X.t list
 
@@ -121,6 +167,9 @@ end = struct
 
   let compare (m1 : t) (m2 : t) =
     List.compare X.compare m1 m2
+
+  let pp (ppx : X.t Format.pp) (fmt : Format.formatter) (m : t) =
+    Format.pp_print_list ~pp_sep:(fun _ () -> ()) ppx fmt m
 end
 
 (* -------------------------------------------------------------------- *)
@@ -128,6 +177,10 @@ module MonAlg(X : Monoid)(R : Ring) : sig
   type t
 
   include Ring with type t := t (* and a bit more :) *)
+
+  val form : R.t -> X.t -> t
+
+  val pp : X.t Format.pp -> R.t Format.pp -> t Format.pp
 end = struct
   module M = Map.Make(X)
 
@@ -175,4 +228,14 @@ end = struct
 
   let compare (p : t) (q : t) : int =
     M.compare R.compare p q
+
+  let pp (ppx : X.t Format.pp) (ppc : R.t Format.pp) fmt p =
+    let pp_form fmt (f, c) =
+      if   R.eq c R.unit
+      then ppx fmt f
+      else Format.fprintf fmt "%a * %a" ppc c ppx f in
+
+    Format.pp_print_list
+      ~pp_sep:(fun fmt () -> Format.pp_print_string fmt " + ")
+      pp_form fmt (M.bindings p)
 end
