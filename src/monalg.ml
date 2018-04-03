@@ -23,7 +23,6 @@ module type Ring = sig
   val ( -! ) : t -> t -> t
   val ( ~! ) : t -> t
   val ( *! ) : t -> t -> t
-
   include Ord.Eq   with type t := t
   include Ord.Comp with type t := t
 end
@@ -43,6 +42,58 @@ module IntRing : Ring with type t = Big_int.big_int = struct
 
   let eq = Big_int.eq_big_int
   let compare = Big_int.compare_big_int
+end
+
+(* -------------------------------------------------------------------- *)
+module type Field = sig
+  include Ring
+ 
+  val ( /! ) : t -> t -> t
+end
+
+(* -------------------------------------------------------------------- *)
+module IntField: Field with type t = Big_int.big_int * Big_int.big_int = struct
+
+  type v = Big_int.big_int
+  type t = v * v
+
+  let zero : t = Big_int.zero_big_int, Big_int.unit_big_int
+  let unit : t = Big_int.unit_big_int, Big_int.unit_big_int
+
+  let bzero = Big_int.zero_big_int
+  let bunit = Big_int.unit_big_int
+  let ( +? ) = Big_int.add_big_int
+  let ( -? ) = Big_int.sub_big_int
+  let ( ~? ) = Big_int.minus_big_int
+  let ( *? ) = Big_int.mult_big_int
+  let ( /? ) = Big_int.div_big_int
+  let beq = Big_int.eq_big_int
+  let bcompare = Big_int.compare_big_int
+
+  let rec gcd (u : v) (v : v) =
+  	if v <> bzero then (gcd v (Big_int.mod_big_int u v)) else (Big_int.abs_big_int u) 
+
+  let lcm m n =
+  	match m, n with
+	  | zero, _ | _, zero -> zero
+	  | m, n -> (/?) (Big_int.abs_big_int ( ( *? ) m n)) (gcd m n)
+
+  let norm ((p,q) : t) : t = 
+	let m = lcm p q in
+		((/?) p m, (/?) q m)		
+
+  let ( +! ) ((p1, q1) : t) ((p2, q2) : t) : t =
+	norm ( (+?) ( ( *?) p1 q2) ( ( *? ) p2 q1), ( *? ) q1 q2) 
+  let ( -! ) ((p1, q1) : t) ((p2, q2) : t) : t =
+	norm ( (-?) ( ( *?) p1 q2) ( ( *? ) p2 q1), ( *? ) q1 q2) 
+  let ( ~! ) ((p, q) : t) =  ((~?) p, q)
+  let ( *! ) ((p1, q1) : t) ((p2, q2) : t) : t =
+	norm (( *?) p1 p2, ( *? ) q1 q2) 
+  let ( /! ) ((p1, q1) : t) ((p2, q2) : t) : t =
+	norm (( *?) p1 q2, ( *? ) q1 p2) 
+
+  let eq ((p1, q1) : t) ((p2, q2) : t) : bool = beq p1 p2 && beq q1 q2
+  let compare ((p1, q1) : t) ((p2, q2) : t) : int = bcompare ( ( *? ) p1 q2) ( ( *? ) q1 p2)
 end
 
 (* -------------------------------------------------------------------- *)
@@ -90,17 +141,21 @@ module type Var = sig
 end
 
 (* -------------------------------------------------------------------- *)
-module Multinom(X : Var) : sig
+module Multinom(X : Var)  : sig
   include Monoid
 
   val getpow : t -> X.t -> int
   val ofvar  : X.t -> t
   val ofmap  : int Map.Make(X).t -> t
 
+  exception DivFailure
+  val ( */ )  :  Set.Make(X).t -> t -> t -> t
+  val lcm : t -> t -> t
+
   val pp : X.t Format.pp -> t Format.pp
 end = struct
   module M = Map.Make(X)
-
+  module S = Set.Make(X)
   type t = int M.t
 
   let getpow (m : t) (i : X.t) =
@@ -123,7 +178,28 @@ end = struct
       | None  , Some _ -> i2
       | Some x, Some y ->
           let xy = x + y in if xy = 0 then None else Some xy
+    in M.merge (fun _ -> merge) m1 m2
 
+  exception DivFailure
+
+  let ( */ ) (s : S.t) (m1 : t) (m2 : t) =
+    let merge v i1 i2 =
+      match i1, i2 with
+      | None  , None   -> None
+      | Some _, None   -> i1
+      | None  , Some _ -> raise DivFailure
+      | Some x, Some y ->
+          let xy = x - y  in if (xy <= 0 || (S.mem v s)) then raise DivFailure else Some xy
+    in M.merge merge m1 m2
+
+  let lcm (m1 : t) (m2 : t) =
+    let merge i1 i2 =
+      match i1, i2 with
+      | None  , None   -> None
+      | Some _, None   -> i1
+      | None  , Some _ -> i2
+      | Some x, Some y ->
+          let xy = max x y  in if xy = 0 then None else Some xy
     in M.merge (fun _ -> merge) m1 m2
 
   let eq (m1 : t) (m2 : t) =
@@ -180,6 +256,8 @@ module MonAlg(X : Monoid)(R : Ring) : sig
 
   val form : R.t -> X.t -> t
 
+  val split : t -> ((X.t * R.t) * t) option  (* return the leading monomial and the remainder *)
+
   val pp : X.t Format.pp -> R.t Format.pp -> t Format.pp
 end = struct
   module M = Map.Make(X)
@@ -223,6 +301,13 @@ end = struct
       (fun x c -> M.fold (fun x' c'-> add1 (c, x) (c', x')) q)
       p zero
 
+  let split (p : t) : ((X.t * R.t) * t) option =
+    try 
+      let x, r = M.max_binding p in 
+      Some(((x, r), M.remove x p))
+    with
+        | Not_found -> None
+
   let eq (p : t) (q : t) : bool =
     M.equal R.eq p q
 
@@ -239,3 +324,59 @@ end = struct
       ~pp_sep:(fun fmt () -> Format.pp_print_string fmt " + ")
       pp_form fmt (M.bindings p)
 end
+
+(* -------------------------------------------------------------------- *)
+module ProdAlg(A : Ring)(B : Ring) : sig
+  type t = A.t * B.t
+
+  include Ring with type t := t 
+
+  val pi1 : t -> A.t  
+  val pi2 : t -> B.t
+
+  val i1 : A.t -> t
+  val i2 : B.t -> t
+
+  val pp : A.t Format.pp -> B.t Format.pp -> t Format.pp
+end = struct
+
+  type t = A.t * B.t
+
+  let pi1 ((p, q) : t) : A.t = p
+
+  let pi2 ((p, q) : t) : B.t = q
+
+  let i1 (a : A.t) : t = (a, B.zero)
+  
+  let i2 (b : B.t) : t = (A.zero, b)
+ 
+  let zero : t =
+    A.zero, B.zero
+
+  let unit : t =
+    A.unit, B.unit
+
+  let ( +! ) ((p1, q1) : t) ((p2, q2) : t) : t =
+    (A.(+!) p1 p2, B.(+!) q1 q2)
+
+  let ( -! ) ((p1, q1) : t) ((p2, q2) : t) : t =
+    (A.(-!) p1 p2, B.(-!) q1 q2)
+
+  let ( ~! ) ((p, q) : t) : t =
+    (A.(~!) p, B.(~!) q)
+
+  let ( *! ) ((p1, q1) : t) ((p2, q2) : t) : t =
+    (A.( *! ) p1 p2, B.( *! ) q1 q2)
+
+  let eq ((p1, q1) : t) ((p2, q2) : t) : bool =
+    (A.eq p1 p2) && (B.eq q1 q2)
+
+  let compare ((p1, q1) : t) ((p2, q2) : t) : int =
+    let x = A.compare p1 p2 in
+       if x <> 0 then x else (B.compare q1 q2)
+
+  let pp (ppx : A.t Format.pp) (ppc : B.t Format.pp) fmt ((p, q) : t) =
+    Format.fprintf fmt "(%a, %a)" ppx p ppc q
+end
+
+
