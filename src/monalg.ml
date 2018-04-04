@@ -52,7 +52,12 @@ module type Field = sig
 end
 
 (* -------------------------------------------------------------------- *)
-module IntField: Field with type t = Big_int.big_int * Big_int.big_int = struct
+module IntField : sig
+  include  Field with type t = Big_int.big_int * Big_int.big_int 
+
+  val lcm : t -> t -> t
+
+end = struct
 
   type v = Big_int.big_int
   type t = v * v
@@ -70,16 +75,16 @@ module IntField: Field with type t = Big_int.big_int * Big_int.big_int = struct
   let beq = Big_int.eq_big_int
   let bcompare = Big_int.compare_big_int
 
-  let rec gcd (u : v) (v : v) =
-  	if v <> bzero then (gcd v (Big_int.mod_big_int u v)) else (Big_int.abs_big_int u) 
+  let rec bgcd (u : v) (v : v) =
+  	if v <> bzero then (bgcd v (Big_int.mod_big_int u v)) else (Big_int.abs_big_int u) 
 
-  let lcm m n =
+  let blcm m n =
   	match m, n with
 	  | zero, _ | _, zero -> zero
-	  | m, n -> (/?) (Big_int.abs_big_int ( ( *? ) m n)) (gcd m n)
+	  | m, n -> (/?) (Big_int.abs_big_int ( ( *? ) m n)) (bgcd m n)
 
   let norm ((p,q) : t) : t = 
-	let m = lcm p q in
+	let m = blcm p q in
 		((/?) p m, (/?) q m)		
 
   let ( +! ) ((p1, q1) : t) ((p2, q2) : t) : t =
@@ -91,7 +96,10 @@ module IntField: Field with type t = Big_int.big_int * Big_int.big_int = struct
 	norm (( *?) p1 p2, ( *? ) q1 q2) 
   let ( /! ) ((p1, q1) : t) ((p2, q2) : t) : t =
 	norm (( *?) p1 q2, ( *? ) q1 p2) 
-
+  
+  let lcm ((p1, q1) : t) ((p2, q2) : t) : t = 
+    norm (blcm p1 p2, ( *?) q1 q2)
+   
   let eq ((p1, q1) : t) ((p2, q2) : t) : bool = beq p1 p2 && beq q1 q2
   let compare ((p1, q1) : t) ((p2, q2) : t) : int = bcompare ( ( *? ) p1 q2) ( ( *? ) q1 p2)
 end

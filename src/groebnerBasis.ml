@@ -26,10 +26,10 @@ module P = Monalg.ProdAlg(S)(T)
 (* Reduce monomial cm by polynomial pol, returning replacement for cm.       *)
 (* ------------------------------------------------------------------------- *)
 
-let reduce1 (priv:Y.t) ((m, c) : X.t * R.t) ((p, q):P.t) =
+let reduce1 (priv : Y.t) ((m, c) : X.t * R.t) ((p, q) : P.t) =
   match (S.split p) with
     | None -> None
-    | Some(((m2,c2), remainder)) -> 
+    | Some(((m2, c2), remainder)) -> 
       try
         let x, r = (X.( */ ) priv m m2, R.( ~!)  (R.( /! ) c c2)) in Some(P.( *! ) (S.form r x, T.form r x) (remainder, q))
         with X.DivFailure -> None
@@ -37,61 +37,71 @@ let reduce1 (priv:Y.t) ((m, c) : X.t * R.t) ((p, q):P.t) =
 (* ------------------------------------------------------------------------- *)
 (* Try this for all polynomials in a basis.                                  *)
 (* ------------------------------------------------------------------------- *)
-(*
+
 exception ReduceFailure
 
 let reduceb mp cm pols =
   try  List.find_map (reduce1 mp cm) pols
   with Not_found -> raise ReduceFailure
-*)
+
 (* ------------------------------------------------------------------------- *)
 (* Reduction of a polynomial (always picking largest monomial possible).     *)
 (* ------------------------------------------------------------------------- *)
-(*
-let rec reduce mp pols pol=
-  match pol with
-  | [] -> []
-  | cm :: ptl ->
-      try  reduce mp pols (mpoly_add (reduceb  mp cm pols) ptl)
-      with ReduceFailure -> cm :: reduce mp pols ptl
-*)
+
+let rec reduce mp pols ((p, q) : P.t)=
+  match (S.split p) with
+  | None -> None
+  | Some(((m, c), remainder)) -> 
+      try  reduce mp pols (P.(+!) (reduceb  mp (m, c) pols) (remainder,q))
+      with ReduceFailure -> 
+        match (reduce mp pols (remainder, q)) with
+            |None -> None
+            |Some(pq) -> Some(P.(+!) pq (P.i1 (S.form c m)))
+
 (* ------------------------------------------------------------------------- *)
 (* Compute S-polynomial of two polynomials.                                  *)
 (* ------------------------------------------------------------------------- *)
-(*
-let spoly mp pol1 pol2 :pol=
-  match (pol1,pol2) with
-  | ([], _ ) -> []
-  | (_ , []) -> []
 
-  | (m1 :: ptl1, m2 :: ptl2) ->
-     let m = mlcm m1 m2 in
-     mpoly_sub (mpoly_mmul mp (mdiv mp m m1) ptl1)
-               (mpoly_mmul mp (mdiv mp m m2) ptl2)
-*)
+let spoly priv ((p1, q1) : P.t) ((p2, q2) : P.t) =
+  match (S.split p1, S.split p2) with
+  | (None, _ ) -> None
+  | (_ , None) -> None
+  | (Some(((m1, c1), r1)),Some(((m2, c2), r2))) ->
+     let m = X.lcm m1 m2 and c = R.lcm c1 c2 in
+     let x1, r1 = (X.( */ ) priv m m1, R.( ~!)  (R.( /! ) c c1)) in
+     let x2, r2 = (X.( */ ) priv m m2, R.( ~!)  (R.( /! ) c c2)) in
+     let mul1 = (S.form r1 x1, T.form r1 x1) and mul2 = (S.form r2 x2, T.form r2 x2) in
+		Some(P.( -!) (P.( *! ) mul1 (p1, q1))
+					 (P.( *! ) mul2 (p2, q2))
+			)
 (* ------------------------------------------------------------------------- *)
 (* Grobner basis algorithm for free multi-module                             *)
 (* ------------------------------------------------------------------------- *)
-(*
-let rec grobner mp basis pairs =
+
+let rec grobner priv basis pairs =
   match pairs with
   | [] -> basis
   
   | (p1, p2) :: opairs ->
       try
-        let sp = reduce mp basis (spoly mp p1 p2) in
-        if List.is_empty sp then grobner mp basis opairs                                      else
-          let newcps = List.map (fun p -> p,sp) basis in
-            grobner mp (sp::basis) (opairs @ newcps)
-      with ReduceFailure | MDivFailure -> grobner mp basis opairs
-*)
+		match (spoly priv p1 p2) with
+			|None ->  grobner priv basis opairs
+			|Some(spol) ->
+	        match (reduce priv basis spol) with
+				|None -> grobner priv basis opairs
+				|Some(sp) ->
+	        	  let newcps = List.map (fun p -> p,sp) basis in
+    	        	grobner priv (sp::basis) (opairs @ newcps)
+      with ReduceFailure | X.DivFailure -> grobner priv basis opairs
+
 (* ------------------------------------------------------------------------- *)
 (* Overall function.                                                         *)
 (* ------------------------------------------------------------------------- *)
-(*
-let groebner mp basis =
-  grobner mp basis (distinctpairs basis)
 
-let is_deduc mp basis (pol:pol) =
-  List.is_empty (reduce mp basis pol)
-*) 
+let groebner priv basis =
+  grobner priv basis (distinctpairs basis)
+
+let deduc priv basis secret =
+	let basis = groebner priv basis in
+  		(reduce priv basis secret)
+
