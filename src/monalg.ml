@@ -57,13 +57,11 @@ module IntField : sig
 
   val lcm : t -> t -> t
 
+  val pp : Big_int.big_int Format.pp -> t Format.pp
 end = struct
 
   type v = Big_int.big_int
   type t = v * v
-
-  let zero : t = Big_int.zero_big_int, Big_int.unit_big_int
-  let unit : t = Big_int.unit_big_int, Big_int.unit_big_int
 
   let bzero = Big_int.zero_big_int
   let bunit = Big_int.unit_big_int
@@ -75,8 +73,12 @@ end = struct
   let beq = Big_int.eq_big_int
   let bcompare = Big_int.compare_big_int
 
+  let zero : t = (bzero, bunit)
+  let unit : t = (bunit, bunit)
+
+
   let rec bgcd (u : v) (v : v) =
-  	if v <> bzero then (bgcd v (Big_int.mod_big_int u v)) else (Big_int.abs_big_int u) 
+  	if not (v == bzero) then (bgcd v (Big_int.mod_big_int u v)) else (Big_int.abs_big_int u) 
 
   let blcm m n =
   	match m, n with
@@ -84,8 +86,9 @@ end = struct
 	  | m, n -> (/?) (Big_int.abs_big_int ( ( *? ) m n)) (bgcd m n)
 
   let norm ((p,q) : t) : t = 
-	let m = blcm p q in
-		((/?) p m, (/?) q m)		
+    if beq p bzero then zero else 
+        let m = blcm p q in
+		    ((/?) p m, (/?) q m)		
 
   let ( +! ) ((p1, q1) : t) ((p2, q2) : t) : t =
 	norm ( (+?) ( ( *?) p1 q2) ( ( *? ) p2 q1), ( *? ) q1 q2) 
@@ -102,6 +105,11 @@ end = struct
    
   let eq ((p1, q1) : t) ((p2, q2) : t) : bool = beq p1 p2 && beq q1 q2
   let compare ((p1, q1) : t) ((p2, q2) : t) : int = bcompare ( ( *? ) p1 q2) ( ( *? ) q1 p2)
+
+  let pp (ppx : Big_int.big_int Format.pp) (fmt : Format.formatter) ((p, q) : t) =
+      Format.fprintf fmt "(%a/%a)" ppx p ppx q
+
+
 end
 
 (* -------------------------------------------------------------------- *)
@@ -197,7 +205,7 @@ end = struct
       | Some _, None   -> i1
       | None  , Some _ -> raise DivFailure
       | Some x, Some y ->
-          let xy = x - y  in if (xy <= 0 || (S.mem v s)) then raise DivFailure else Some xy
+          let xy = x - y  in if (xy < 0 || (xy > 0 && (S.mem v s))) then raise DivFailure else Some xy
     in M.merge merge m1 m2
 
   let lcm (m1 : t) (m2 : t) =
@@ -311,10 +319,10 @@ end = struct
 
   let split (p : t) : ((X.t * R.t) * t) option =
     try 
-      let x, r = M.max_binding p in 
+      let x, r = M.min_binding p in 
       Some(((x, r), M.remove x p))
     with
-        | Not_found -> None
+        | _ -> None
 
   let eq (p : t) (q : t) : bool =
     M.equal R.eq p q

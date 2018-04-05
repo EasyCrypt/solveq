@@ -11,11 +11,17 @@ open Monalg
 (* ------------------------------------------------------------------------- *)
 
 module R = Monalg.IntField
+module V : Monalg.Var with type t = String.t = struct
+  type t = String.t
+
+  let eq a b = String.equal a b
+  let  compare a b = String.compare a b
+end 
 
 
-module X = Monalg.Multinom(R)  (* the monomials over variables *)
-module Y = Set.Make(R)         (* the set of private variables *)
-module Z = Monalg.Multinom(R)  (* the monomials for ghost variables *)
+module X = Monalg.Multinom(V)  (* the monomials over variables *)
+module Y = Set.Make(V)         (* the set of private variables *)
+module Z = Monalg.Multinom(V)  (* the monomials for ghost variables *)
 
 module S = Monalg.MonAlg(X)(R)
 module T = Monalg.MonAlg(Z)(R)
@@ -50,7 +56,7 @@ let reduceb mp cm pols =
 
 let rec reduce mp pols ((p, q) : P.t)=
   match (S.split p) with
-  | None -> None
+  | None -> Some(p,q)
   | Some(((m, c), remainder)) -> 
       try  reduce mp pols (P.(+!) (reduceb  mp (m, c) pols) (remainder,q))
       with ReduceFailure -> 
@@ -90,8 +96,11 @@ let rec grobner priv basis pairs =
 	        match (reduce priv basis spol) with
 				|None -> grobner priv basis opairs
 				|Some(sp) ->
-	        	  let newcps = List.map (fun p -> p,sp) basis in
-    	        	grobner priv (sp::basis) (opairs @ newcps)
+                    if (P.eq sp P.zero) then 
+                         grobner priv basis opairs
+                    else
+       	        	  let newcps = List.map (fun p -> p,sp) basis in
+        	        	grobner priv (sp::basis) (opairs @ newcps)
       with ReduceFailure | X.DivFailure -> grobner priv basis opairs
 
 (* ------------------------------------------------------------------------- *)
