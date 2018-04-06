@@ -205,7 +205,11 @@ end = struct
       | Some _, None   -> i1
       | None  , Some _ -> raise DivFailure
       | Some x, Some y ->
-          let xy = x - y  in if (xy < 0 || (xy > 0 && (S.mem v s))) then raise DivFailure else Some xy
+          let xy = x - y  in 
+            if xy = 0 then None
+            else if (xy < 0 || (S.mem v s)) then 
+                raise DivFailure 
+            else Some xy
     in M.merge merge m1 m2
 
   let lcm (m1 : t) (m2 : t) =

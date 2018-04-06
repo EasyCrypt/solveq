@@ -28,6 +28,9 @@ module T = Monalg.MonAlg(Z)(R)
 
 module P = Monalg.ProdAlg(S)(T)
 
+let is_zero ((p, q) : P.t) : bool =
+    S.eq p S.zero
+
 (* ------------------------------------------------------------------------- *)
 (* Reduce monomial cm by polynomial pol, returning replacement for cm.       *)
 (* ------------------------------------------------------------------------- *)
@@ -96,7 +99,7 @@ let rec grobner priv basis pairs =
 	        match (reduce priv basis spol) with
 				|None -> grobner priv basis opairs
 				|Some(sp) ->
-                    if (P.eq sp P.zero) then 
+                    if (is_zero sp) then 
                          grobner priv basis opairs
                     else
        	        	  let newcps = List.map (fun p -> p,sp) basis in
@@ -112,5 +115,7 @@ let groebner priv basis =
 
 let deduc priv basis secret =
 	let basis = groebner priv basis in
-  		(reduce priv basis secret)
+        match (reduce priv basis secret) with
+            |None -> None
+            |Some((p,q)) -> Some(T.( ~!) q)
 
