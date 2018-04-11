@@ -5,14 +5,15 @@ type id
 type types =
   | BitString of id
   | G of id
-  | Fq
+  | Fq of id
   | Prod of types list
+  | Abstract
 
 
 type const =
-  | Gen       (* a group generator *)
+  | Gen       (* a generator of its group types *)
   | F of int  (* a field element *)
-  | Zero      (* the empty bitstring *)
+  | Zero      (* the empty bitstring of size its types *)
 
 type operator =
   (* bilinear groups *)
