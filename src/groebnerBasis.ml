@@ -2,7 +2,7 @@
 
 (* Imports and abbreviations *)
     
-open Utils
+open Core
 open Num.TaggedInfix
 open Monalg
 
@@ -111,7 +111,7 @@ let rec grobner priv basis pairs =
 (* ------------------------------------------------------------------------- *)
 
 let groebner priv basis =
-  grobner priv basis (distinctpairs basis)
+  grobner priv basis (List.product basis)
 
 let deduc priv basis secret =
 	let basis = groebner priv basis in

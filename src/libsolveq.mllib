@@ -1,4 +1,9 @@
-utils
-groebnerBasis
-nc_gasbi
-monalg
+Core
+Location
+Lexer
+Parser
+Syntax
+Io
+GroebnerBasis
+Nc_gasbi
+Monalg

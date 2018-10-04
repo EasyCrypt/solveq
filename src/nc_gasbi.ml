@@ -1,7 +1,7 @@
 (* Grobner basis computations for K[X]-module *)
 
 (* Imports and abbreviations *)    
-open Utils
+open Core
 open Num.TaggedInfix
 
 (* ------------------------------------------------------------------------- *)

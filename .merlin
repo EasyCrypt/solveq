@@ -7,4 +7,5 @@ FLG -rectypes
 FLG -w a
 
 PKG batteries
+PKG menhirLib
 PKG num
