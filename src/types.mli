@@ -8,4 +8,4 @@ type group =
   | Add of group*group
   | Var of var
 
-val compute_inv : var -> group -> group Option
+val compute_inv : var -> group -> group option

@@ -1,5 +1,4 @@
 %{
-  open Core
   open Location
   open Syntax
 
