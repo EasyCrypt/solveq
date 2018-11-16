@@ -3,7 +3,7 @@
 # --------------------------------------------------------------------
 OCAMLBUILD_JOBS  ?= 1
 OCAMLBUILD_BIN   ?= ocamlbuild
-OCAMLBUILD_EXTRA ?= 
+OCAMLBUILD_EXTRA ?=
 OCAMLBUILD_OPTS  := -use-ocamlfind -j $(OCAMLBUILD_JOBS)
 
 # In Emacs, use classic display to enable error jumping.
@@ -15,36 +15,28 @@ OCAMLBUILD_OPTS += $(OCAMLBUILD_EXTRA)
 OCAMLBUILD      := $(OCAMLBUILD_BIN) $(OCAMLBUILD_OPTS)
 
 # --------------------------------------------------------------------
-MAIN := libsolveq
+.PHONY: all build lib install uninstall examples clean
 
-# --------------------------------------------------------------------
-.PHONY: all build native byte install uninstall examples clean
-
-all: build
+all: lib
 	@true
 
-build: native
+build: lib
 
-byte:
-	$(OCAMLBUILD) $(MAIN).cma
+lib:
+	$(OCAMLBUILD) libs/solveq.cmo libs/solveq.cmx
 
-native:
-	$(OCAMLBUILD) $(MAIN).cmxa
+examples: lib
+	cd tests && ocaml -rectypes examples.ml monalg_tests.ml
 
-examples: byte
-	cd tests && ocaml -rectypes examples.ml
-
-install: native
-	ocamlfind install libsolveq META \
-	  _build/src/$(MAIN).cma \
-	  _build/src/$(MAIN).cmxa \
-	  _build/src/$(MAIN).a \
-	  _build/src/*.cmi \
-	  _build/src/*.cmx
+install: lib
+	ocamlfind install solveq META \
+	  _build/libs/solveq.cmo \
+	  _build/libs/solveq.o \
+	  _build/libs/solveq.cmx \
+	  _build/libs/solveq.cmi
 
 uninstall:
-	ocamlfind remove libsolveq
+	ocamlfind remove solveq
 
 clean:
 	$(OCAMLBUILD) -clean
-	rm -f $(MAIN).cma $(MAIN).cmxa

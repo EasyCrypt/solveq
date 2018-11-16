@@ -3,9 +3,11 @@
 #use "topfind";;
 #require "num";;
 #require "batteries";;
-#cd "../_build/src/";;
-#load "libsolveq.cma";;
+#require "menhirLib"
+#cd "../_build/libs/";;
+#load "solveq.cmo";;
 
+open Solveq
 open GroebnerBasis
 
 

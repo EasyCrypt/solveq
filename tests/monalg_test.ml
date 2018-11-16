@@ -1,8 +1,9 @@
 #use "topfind";;
 #require "num";;
 #require "batteries";;
+#require "menhirLib"
 #cd "../_build/src/";;
-#load "libsolveq.cma";;
+#load "solveq.cmo";;
 
 (* -------------------------------------------------------------------- *)
 open Utils

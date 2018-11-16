@@ -1,13 +1,14 @@
 # --------------------------------------------------------------------
 true : debug
 true : warn_a
-true : -traverse
 true : bin_annot
 true : use_menhir, menhir_explain
 
 # --------------------------------------------------------------------
-<src> : include
+<libs>: include
+
+<libs/solveq/*.{ml,mli}>: package(batteries,menhirLib,num)
+<libs/solveq/*.{cmo,cmx}>: for-pack(Solveq)
 
 # --------------------------------------------------------------------
-<src/*.{ml,mli}> : package(batteries,menhirLib,num)
 <tests/*.{ml,mli}> : package(batteries,menhirLib,num)

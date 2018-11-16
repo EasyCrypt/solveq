@@ -25,7 +25,7 @@ let _ = dispatch begin function
        flag ["ocaml"; "link"    ;  "bisect"] & S[A"-package"; A"bisect"];
 
        (* src / tests *)
-       Pathname.define_context "tests" ["src"]
+       Pathname.define_context "src" ["libs"]
 
    | _ -> ()
 end
