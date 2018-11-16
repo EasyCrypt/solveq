@@ -2,17 +2,17 @@ opam-version: "1.2"
 maintainer: "pierre-yves@strub.nu"
 homepage: "https://gforge.inria.fr/projects/solveq"
 bug-reports: "https://gforge.inria.fr/projects/solveq"
-name: "libsolveq"
+name: "solveq"
 version: "0.1"
 authors: [
   "Benjamin Grégoire"
   "Charlie Jacomme"
+  "Pierre-Yves Strub"
 ]
 build: [
-  [make "byte"]
+  [make "libs"]
 ]
 install: [
-  [make "native"]
   [make "install"]
 ]
 remove: [ 
@@ -21,4 +21,5 @@ remove: [
 depends: [
   "num"
   "batteries" {>= "2.8"}
+  "menhir"
 ]
