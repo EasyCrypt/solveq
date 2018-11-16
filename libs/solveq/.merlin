@@ -1,10 +1,8 @@
 PRJ solveq
 
-S libs
-S libs/solveq
-S libs/owhile
-
-B _build/libs
+S .
+B ../../_build/libs/solveq
+B ../../_build/libs
 
 FLG -rectypes
 FLG -w a
