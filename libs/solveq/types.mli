@@ -1,5 +1,3 @@
-(* length and size variable for groups and bitstring *)
-
 type var = int
 
 type group = 
@@ -8,4 +6,3 @@ type group =
   | Add of group*group
   | Var of var
 
-val compute_inv : var -> group -> group option

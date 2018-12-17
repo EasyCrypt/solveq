@@ -4,6 +4,7 @@ Lexer
 Parser
 Syntax
 Io
+Inverter
 GroebnerBasis
 Nc_gasbi
 Monalg
