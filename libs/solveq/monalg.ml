@@ -164,6 +164,7 @@ module Multinom(X : Var)  : sig
   val getpow : t -> X.t -> int
   val ofvar  : X.t -> t
   val ofmap  : int Map.Make(X).t -> t
+  val tomap  : t-> int Map.Make(X).t
 
   exception DivFailure
   val ( */ )  :  Set.Make(X).t -> t -> t -> t
@@ -183,6 +184,9 @@ end = struct
 
   let ofmap (m : int M.t) : t =
     M.filter (fun _ i -> 0 < i) m
+
+  let tomap (m : t) : int M.t =
+    m
 
   let unit : t =
     M.empty
