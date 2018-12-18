@@ -38,5 +38,7 @@ install: lib
 uninstall:
 	ocamlfind remove solveq
 
+reinstall: uninstall install
+
 clean:
 	$(OCAMLBUILD) -clean
