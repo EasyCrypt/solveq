@@ -103,7 +103,8 @@ end = struct
   let lcm ((p1, q1) : t) ((p2, q2) : t) : t = 
     norm (blcm p1 p2, ( *?) q1 q2)
    
-  let eq ((p1, q1) : t) ((p2, q2) : t) : bool = beq p1 p2 && beq q1 q2
+  let eq ((p1, q1) : t) ((p2, q2) : t) : bool = (beq p1 p2 && beq q1 q2)
+                                                || ((beq p1 ((~?) p2)) && beq  p1 ((~?) p2) )
   let compare ((p1, q1) : t) ((p2, q2) : t) : int = bcompare ( ( *? ) p1 q2) ( ( *? ) q1 p2)
 
   let pp (ppx : Big_int.big_int Format.pp) (fmt : Format.formatter) ((p, q) : t) =
