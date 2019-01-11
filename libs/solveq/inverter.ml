@@ -98,7 +98,7 @@ let compute_inv_ring (v:var) (r:ring) =
     let p1 = pol_to_ring p1 and p2 = pol_to_ring p2 in
     match p1 with
     |UnitR -> Some(AddR(VarR v, OppR(p2)))
-    |_ -> Some(MultR(AddR(VarR v, OppR(p2)), InvR(p1)))
+    |_ -> Some(MultR(AddR(VarR v, OppR(p2)), InvR(p1))) (* we return a fraction, might be necessary to check that inv not null *)
   with NoInv -> None
 
 
