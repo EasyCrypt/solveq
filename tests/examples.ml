@@ -9,9 +9,9 @@
 
 open Solveq
 open GroebnerBasis
+open Types
 
-
-let mon_pp = X.pp Format.pp_print_string;;
+let mon_pp = X.pp Format.pp_print_int;;
 let bi_pp fmt bi = Format.pp_print_int fmt  (Big_int.int_of_big_int bi);;
 let r_pp = R.pp bi_pp;;
 let s_pp = S.pp mon_pp r_pp;;
@@ -29,7 +29,7 @@ let p_pp = P.pp s_pp t_pp;;
 (* ------------------------------------------------------------------------- *)
 
 
-let x = "x" and y = "y" and z = "z";;
+let x = 1 and y = 2 and z = 3;;
 
 let priv = GroebnerBasis.Y.empty;; (* only z is fully known, and only g^x and g^y are known *)
 GroebnerBasis.Y.add x priv;;
@@ -42,8 +42,8 @@ let m4 = X.( *@ ) m1 m2;; (* xy *)
 let m5 = X.( *@ ) m2 m3;; (* yz *)
 
 S.form R.unit m2;;
-let p1 = S.( +! ) (S.form R.unit m4) (S.form R.unit m2) and sp1 = T.form R.unit (X.ofvar "p1");; (* xy+y *)
-let p2 =  (S.form R.unit m4) and sp2 = T.form R.unit (X.ofvar "p2");; (* xy *)
+let p1 = S.( +! ) (S.form R.unit m4) (S.form R.unit m2) and sp1 = T.form R.unit (X.ofvar 4);; (* xy+y *)
+let p2 =  (S.form R.unit m4) and sp2 = T.form R.unit (X.ofvar 5);; (* xy *)
 
 
 let sp = spoly priv (p1,sp1) (p2,sp2);;

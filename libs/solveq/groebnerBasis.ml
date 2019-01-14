@@ -5,25 +5,16 @@
 open Core
 open Num.TaggedInfix
 open Monalg
-
+open Types
+     
 (* ------------------------------------------------------------------------- *)
 (* Defining polynomial types                                                 *)
 (* ------------------------------------------------------------------------- *)
 
-module R = Monalg.IntField
-module V : Monalg.Var with type t = String.t = struct
-  type t = String.t
 
-  let eq a b = String.equal a b
-  let  compare a b = String.compare a b
-end 
-
-
-module X = Monalg.Multinom(V)  (* the monomials over variables *)
 module Y = Set.Make(V)         (* the set of private variables *)
 module Z = Monalg.Multinom(V)  (* the monomials for ghost variables *)
 
-module S = Monalg.MonAlg(X)(R)
 module T = Monalg.MonAlg(Z)(R)
 
 module P = Monalg.ProdAlg(S)(T)
