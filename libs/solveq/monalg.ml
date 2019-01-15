@@ -231,7 +231,7 @@ end = struct
     M.equal (=) m1 m2
 
   let compare (m1 : t) (m2 : t) =
-    M.compare (Pervasives.compare) m1 m2
+    (M.compare (Pervasives.compare) m2 m1)*(-1) (* correspond to the lexicographic order on multinoms *)
 
   let pp (ppx : X.t Format.pp) (fmt : Format.formatter) (m : t) =
     let ppcx fmt (x, c) =
