@@ -17,7 +17,7 @@ module Z = Monalg.Multinom(V)  (* the monomials for ghost variables *)
 
 module T = Monalg.MonAlg(Z)(R)
 
-module P = Monalg.ProdAlg(S)(T)
+module P = Monalg.ProdAlg(S)(S)
 
 let is_zero ((p, q) : P.t) : bool =
     S.eq p S.zero
@@ -31,7 +31,7 @@ let reduce1 (priv : Y.t) ((m, c) : X.t * R.t) ((p, q) : P.t) =
     | None -> None
     | Some(((m2, c2), remainder)) -> 
       try
-        let x, r = (X.( */ ) priv m m2, R.( ~!)  (R.( /! ) c c2)) in Some(P.( *! ) (S.form r x, T.form r x) (remainder, q))
+        let x, r = (X.( */ ) priv m m2, R.( ~!)  (R.( /! ) c c2)) in Some(P.( *! ) (S.form r x, S.form r x) (remainder, q))
         with X.DivFailure -> None
 
 (* ------------------------------------------------------------------------- *)
@@ -70,7 +70,7 @@ let spoly priv ((p1, q1) : P.t) ((p2, q2) : P.t) =
      let m = X.lcm m1 m2 and c = R.lcm c1 c2 in
      let x1, r1 = (X.( */ ) priv m m1, R.( ~!)  (R.( /! ) c c1)) in
      let x2, r2 = (X.( */ ) priv m m2, R.( ~!)  (R.( /! ) c c2)) in
-     let mul1 = (S.form r1 x1, T.form r1 x1) and mul2 = (S.form r2 x2, T.form r2 x2) in
+     let mul1 = (S.form r1 x1, S.form r1 x1) and mul2 = (S.form r2 x2, S.form r2 x2) in
 		Some(P.( -!) (P.( *! ) mul1 (p1, q1))
 					 (P.( *! ) mul2 (p2, q2))
 			)
@@ -101,12 +101,12 @@ let rec grobner priv basis pairs =
 (* Overall function.                                                         *)
 (* ------------------------------------------------------------------------- *)
 
-let groebner priv basis =
-  grobner priv basis (List.product basis)
+let groebner priv pols =
+  grobner priv pols (List.product pols)
 
+(* deduc expects to get has input a groeber basis *)
 let deduc priv basis secret =
-	let basis = groebner priv basis in
         match (reduce priv basis secret) with
             |None -> None
-            |Some((p,q)) -> Some(T.( ~!) q)
+            |Some((p,q)) -> Some(S.( ~!) q)
 

@@ -169,7 +169,7 @@ module Multinom(X : Var)  : sig
   exception DivFailure
   val ( */ )  :  Set.Make(X).t -> t -> t -> t
   val lcm : t -> t -> t
-
+  val compare : t -> t -> int
   val pp : X.t Format.pp -> t Format.pp
 end = struct
   module M = Map.Make(X)
@@ -230,9 +230,24 @@ end = struct
   let eq (m1 : t) (m2 : t) =
     M.equal (=) m1 m2
 
-  let compare (m1 : t) (m2 : t) =
-    (M.compare (Pervasives.compare) m2 m1)*(-1) (* correspond to the lexicographic order on multinoms *)
-
+  let rec compare (m1 : t) (m2 : t) =
+    if m1 = unit && m2 = unit then 0
+    else if m1 = unit then -1
+    else if m2 = unit then 1
+    else
+      (
+        let (x1,p1) = M.max_binding m1 and (x2,p2) = M.max_binding m2 in
+        let comp  = X.compare x1 x2 in
+        if comp = 0 then
+          (
+            if p1 < p2 then -1
+            else if p1 > p2 then 1
+            else compare (M.remove x1 m1 ) (M.remove x2 m2)
+          )
+        else comp
+  )
+    (* correspond to the lexicographic order on multinoms 
+                                           *)
   let pp (ppx : X.t Format.pp) (fmt : Format.formatter) (m : t) =
     let ppcx fmt (x, c) =
       if   c = 1
@@ -240,7 +255,7 @@ end = struct
       else Format.fprintf fmt "%a^%d" ppx x c in
 
     Format.pp_print_list ~pp_sep:(fun _ () -> ())
-      ppcx fmt (M.bindings m)
+      ppcx fmt (List.rev (M.bindings m))
 end
 
 (* -------------------------------------------------------------------- *)
@@ -328,7 +343,7 @@ end = struct
 
   let split (p : t) : ((X.t * R.t) * t) option =
     try 
-      let x, r = M.min_binding p in 
+      let x, r = M.max_binding p in 
       Some(((x, r), M.remove x p))
     with
         | _ -> None
@@ -347,7 +362,7 @@ end = struct
 
     Format.pp_print_list
       ~pp_sep:(fun fmt () -> Format.pp_print_string fmt " + ")
-      pp_form fmt (M.bindings p)
+      pp_form fmt (List.rev (M.bindings p))
 end
 
 (* -------------------------------------------------------------------- *)

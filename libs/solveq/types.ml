@@ -24,7 +24,7 @@ module V : Monalg.Var with type t = Int.t = struct
   type t = Int.t
 
   let eq a b = Int.equal a b
-  let  compare a b = Int.compare a b
+  let  compare a b = Int.compare a b (* we use Groebner basis with lexicographic order on integer variables *)
 end
 
 module X = Monalg.Multinom(V)  (* the monomials over variables *)
