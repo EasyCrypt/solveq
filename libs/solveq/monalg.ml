@@ -165,7 +165,7 @@ module Multinom(X : Var)  : sig
   val ofvar  : X.t -> t
   val ofmap  : int Map.Make(X).t -> t
   val tomap  : t-> int Map.Make(X).t
-
+  val varset : t -> Set.Make(X).t
   exception DivFailure
   val ( */ )  :  Set.Make(X).t -> t -> t -> t
   val lcm : t -> t -> t
@@ -187,6 +187,8 @@ end = struct
 
   let tomap (m : t) : int M.t =
     m
+  let varset (m:t) =
+     S.of_list (List.map (fun (u,v)->u) (M.bindings m))    
 
   let unit : t =
     M.empty
@@ -299,8 +301,12 @@ module MonAlg(X : Monoid)(R : Ring) : sig
   val split : t -> ((X.t * R.t) * t) option  (* return the leading monomial and the remainder *)
 
   val pp : X.t Format.pp -> R.t Format.pp -> t Format.pp
+
+  val tomap : t -> R.t Map.Make(X).t
+
 end = struct
   module M = Map.Make(X)
+  module S = Set.Make(X)
 
   type t = R.t M.t
 
@@ -310,12 +316,15 @@ end = struct
   let dfl (x : R.t option) : R.t =
     Opt.default R.zero x
 
+  let tomap (p:t) =
+    p
+      
   let zero : t =
     M.empty
 
   let unit : t =
     M.singleton X.unit R.unit
-
+    
   let form (c : R.t) (x : X.t) : t =
     match norm c with
     | None   -> zero

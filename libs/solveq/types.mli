@@ -25,7 +25,13 @@ exception NoInv
 
 module R = IntField   (* module for fields elements *)
 
-module V : (Monalg.Var with type t = Int.t)   (* module for variables *)
+type pvar = String.t
+
+val pvar_of_var : ?pref:string -> var -> pvar
+
+val var_of_pvar : pvar -> var
+
+module V : (Monalg.Var with type t = pvar)   (* module for variables *)
 
 module X : sig  (* module for monomials *)
   type t = Monalg.Multinom(V).t
@@ -37,6 +43,7 @@ module X : sig  (* module for monomials *)
   val ofvar : V.t -> t
   val ofmap : int Core.Map.Make(V).t -> t
   val tomap : t -> int Core.Map.Make(V).t
+  val varset : t -> Set.Make(V).t
   exception DivFailure
   val ( */ ) : Core.Set.Make(V).t -> t -> t -> t
   val lcm : t -> t -> t
@@ -54,6 +61,7 @@ module S : sig (* module for polynomials *)
   val eq : t Core.Ord.eq
   val compare : t Core.Ord.comp
   val form : R.t -> X.t -> t
+  val tomap : t -> R.t Map.Make(X).t
   val split : t -> ((X.t * R.t) * t) option
   val pp : X.t Core.Format.pp -> R.t Core.Format.pp -> t Core.Format.pp
 end

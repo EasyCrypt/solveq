@@ -11,7 +11,7 @@ open GroebnerBasis
 open Types
 open Core
     
-let mon_pp = X.pp Format.pp_print_int;;
+let mon_pp = X.pp Format.pp_print_string;;
 let bi_pp fmt bi = Format.pp_print_int fmt  (Big_int.int_of_big_int bi);;
 let r_pp = R.pp bi_pp;;
 let s_pp = S.pp mon_pp r_pp;;
@@ -31,7 +31,7 @@ let p_pp = P.pp s_pp s_pp;;
 (* ------------------------------------------------------------------------- *)
 
 
-let x = 1 and y = 2 and z = 3;;
+let x = "x" and y = "y" and z =  "z";;
 
 let priv = GroebnerBasis.Y.empty;; (* only z is fully known, and only g^x and g^y are known *)
 GroebnerBasis.Y.add x priv;;
@@ -43,11 +43,10 @@ let m3 = X.ofvar z;; (* z *)
 let m4 = X.( *@ ) m1 m2;; (* xy *)
 let m5 = X.( *@ ) m2 m3;; (* yz *)
 let m6 = X.( *@ ) m1 m1;; (* xx *)
-let m7 = X.ofvar (-6);; (* xx *)
 
 S.form R.unit m2;;
-let p1 = S.( +! ) (S.form R.unit m4) (S.form R.unit m2) and sp1 = S.form R.unit (X.ofvar 4);; (* xy+y *)
-let p2 =  (S.form R.unit m4) and sp2 = S.form R.unit (X.ofvar 5);; (* xy *)
+let p1 = S.( +! ) (S.form R.unit m4) (S.form R.unit m2) and sp1 = S.form R.unit (X.ofvar "sp1");; (* xy+y *)
+let p2 =  (S.form R.unit m4) and sp2 = S.form R.unit (X.ofvar "sp2");; (* xy *)
 
 let py = (S.form R.unit m2);;
 

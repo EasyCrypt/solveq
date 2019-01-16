@@ -7,7 +7,7 @@ module Empty = Set.Make(V) (* an empty set *)
     
 
 
-let rec split_pol (v:var) p1 p2 =
+let rec split_pol (v:pvar) p1 p2 =
   (* on input p1,p2, splits p1 into p,p' where p' does not depend on v,
      and returns (p,p'+p2) *)
   match (S.split p1) with
@@ -19,7 +19,7 @@ let rec split_pol (v:var) p1 p2 =
     else
       (g1,S.(+!) m g2)
 
-let rec div_and_indep (v:var) p =
+let rec div_and_indep (v:pvar) p =
   (* tries to produce the division of p by v, and should provide a polynom
      which does not contain v *)
   match (S.split p) with
@@ -36,8 +36,9 @@ let rec div_and_indep (v:var) p =
 let compute_inv_ring (v:var) (r:ring) =
   try
     let p = ring_to_monalg r in (* we put p in normal form, inside a monalg *)
-    let (p1,p2)= split_pol v p S.zero in (* we split p in p1+p2, where p2 does not contain v *)
-    let p1 = div_and_indep v p1 in (* we divide p1 by v, and obtain a polynom independant from v *)
+    let sv = pvar_of_var v in
+    let (p1,p2)= split_pol sv p S.zero in (* we split p in p1+p2, where p2 does not contain v *)
+    let p1 = div_and_indep sv p1 in (* we divide p1 by v, and obtain a polynom independant from v *)
     (* Here p = v*p1+p2 *)
     let p1 = monalg_to_ring p1 and p2 = monalg_to_ring p2 in
     match p1 with
@@ -48,35 +49,38 @@ let compute_inv_ring (v:var) (r:ring) =
 
 (* Given a list of ring element rs = r1,...,rn depending on a list of variables 
     vs = v1,...,vn , tries to compute the inverse of
-   v1,...,vn -> r1,...,rn 
+   (v1,...,vn) -> (r1,...,rn) 
    The inverse is given as a function from VarR 1,...,VarR n -> exprs
    We test the membership of a sub algebra, following a classical GB encoding.
+   For now, all variables in rs should appear in vs.
+   cf exemples_inv.ml 
 *)
-let compute_inv_ring_tuple (vs:var list) (rs:ring list) =
+let compute_inv_ring_tuple (vs:var list) (rs:ring list) : ring list option=
   if List.length vs != List.length rs then raise NoInv;
   try
-        let private_vars = ref (Y.of_list vs) in (* we first define every variables as private, not know to the adversary *)
-        let counter = ref (0) in 
+        let private_vars = (Y.of_list (List.map pvar_of_var vs)) in (* we first define every variables as private, not know to the adversary *)
+        let counter = ref (0) in
+        let mapping = Array.make (List.length rs) ZeroR in
         let ps = List.fold_left (fun acc elem ->
             counter := !counter+1;
-            let fresh_var =  S.form R.unit (X.ofvar (!counter))  in
-        match elem with
-        | VarR e -> private_vars := Y.remove e (!private_vars);
-                    let e = ring_to_monalg (VarR e) in
-                    (e, fresh_var)::acc
+            let fresh_var =  S.form R.unit (X.ofvar (pvar_of_var (!counter)  ~pref:"f" ))  in
+            let poly = ring_to_monalg elem in
+              (S.(-!) poly fresh_var )::acc
+          ) [] rs in 
 
-        | _ ->
-          let poly = ring_to_monalg elem in
-          let pol_fresh_var =  S.form R.unit (X.ofvar ((-1)*(!counter)))  in
-          (S.(-!) poly pol_fresh_var, fresh_var )::acc
-      ) [] rs in 
-
-    let basis =  groebner !private_vars ps in
-    let inverters = List.map  (
-        fun e->  match (deduc !private_vars basis (P.i1 (S.form R.unit (X.ofvar e)))) with
-          |None -> raise NoInv
-          |Some(q) -> monalg_to_ring q) vs in  (* must check in deduc if the reduced form contains only -t elements *)
-    Some(inverters)
+        let basis =  pgroebner Y.empty ps in
+        let inverters = List.map  (
+            fun e->  match (pdeduc Y.empty basis (S.form R.unit (X.ofvar (pvar_of_var e)))) with
+              |None -> raise NoInv
+              |Some(q) ->
+                let module M = Map.Make(X) in
+                let module Se = Set.Make(V) in
+                let varset = M.fold (fun m r acc-> Se.union acc (X.varset m)) (S.tomap q) Se.empty in
+                if Se.is_empty (Se.inter varset private_vars) then (monalg_to_ring (S.(~!) q))
+                else raise NoInv
+          ) vs
+        in  (* must check in deduc if the reduced form contains only -t elements *)
+        Some(inverters)
   with NoInv -> None
 
 
