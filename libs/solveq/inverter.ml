@@ -7,17 +7,20 @@ module Empty = Set.Make(V) (* an empty set *)
     
 
 
-let rec split_pol (v:pvar) p1 p2 =
+let split_pol (v:pvar) p1 =
+  let rec split_pol_acc (v:pvar) p1 p2 =
   (* on input p1,p2, splits p1 into p,p' where p' does not depend on v,
      and returns (p,p'+p2) *)
   match (S.split p1) with
   | None -> (S.zero,p2)
   | Some(((x,r),p)) ->
-    let (g1,g2) = split_pol v p p2 and m = S.form r x in
+    let (g1,g2) = split_pol_acc v p p2 and m = S.form r x in
     if X.getpow x v != 0 then
       (S.(+!) m g1,g2)
     else
-      (g1,S.(+!) m g2)
+      (g1,S.(+!) m g2) in
+  split_pol_acc v p1 S.zero
+  
 
 let rec div_and_indep (v:pvar) p =
   (* tries to produce the division of p by v, and should provide a polynom
@@ -37,7 +40,7 @@ let compute_inv_ring (v:var) (r:ring) =
   try
     let p = C.ring_to_monalg r in (* we put p in normal form, inside a monalg *)
     let sv = pvar_of_var v in
-    let (p1,p2)= split_pol sv p S.zero in (* we split p in p1+p2, where p2 does not contain v *)
+    let (p1,p2)= split_pol sv p in (* we split p in p1+p2, where p2 does not contain v *)
     let p1 = div_and_indep sv p1 in (* we divide p1 by v, and obtain a polynom independant from v *)
     (* Here p = v*p1+p2 *)
     let p1 = C.monalg_to_ring p1 and p2 = C.monalg_to_ring p2 in
