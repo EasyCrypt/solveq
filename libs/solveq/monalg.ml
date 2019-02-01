@@ -45,6 +45,42 @@ module IntRing : Ring with type t = Big_int.big_int = struct
 end
 
 (* -------------------------------------------------------------------- *)
+module type BigIntVal = sig
+  val x : Big_int.big_int
+end
+
+module type Modulo = sig
+  val modulo : Big_int.big_int -> Big_int.big_int
+end
+
+module Modulo(B : BigIntVal) : Modulo = struct
+  let modulo x = Big_int.modulo x B.x
+end
+
+module BoolBigInt : BigIntVal = struct let x = Big_int.big_int_of_int 2 end
+
+module BoolMod = Modulo(BoolBigInt)
+
+
+module FiniteField(M : Modulo) : Ring with type t = Big_int.big_int = struct
+
+  type t = Big_int.big_int
+
+  let zero : t = Big_int.zero_big_int
+  let unit : t = Big_int.unit_big_int
+
+  let ( +! ) = fun x y -> M.modulo (Big_int.add_big_int x y)
+  let ( -! ) = fun x y -> M.modulo (Big_int.sub_big_int x y)
+  let ( ~! ) = fun x -> M.modulo (Big_int.minus_big_int x)
+  let ( *! ) = fun x y -> M.modulo (Big_int.mult_big_int x y)
+
+  let eq = fun x y -> Big_int.eq_big_int (M.modulo x) (M.modulo y)
+  let compare = fun x y -> Big_int.compare_big_int (M.modulo x) (M.modulo y)
+end
+
+module BoolField = FiniteField(BoolMod)
+
+(* -------------------------------------------------------------------- *)
 module type Field = sig
   include Ring
  
@@ -291,14 +327,23 @@ end = struct
 end
 
 (* -------------------------------------------------------------------- *)
+module type MonAlgebra = sig
+  type t
+  type ring
+  type mon
+  include Ring with type t := t
+
+  val form : ring -> mon -> t
+
+  val split : t -> ((mon * ring) * t) option  (* return the leading monomial and the remainder *)
+
+  end
+
 module MonAlg(X : Monoid)(R : Ring) : sig
   type t
 
-  include Ring with type t := t (* and a bit more :) *)
+  include MonAlgebra with type t := t and type ring = R.t and type mon = X.t (* and a bit more :) *)
 
-  val form : R.t -> X.t -> t
-
-  val split : t -> ((X.t * R.t) * t) option  (* return the leading monomial and the remainder *)
 
   val pp : X.t Format.pp -> R.t Format.pp -> t Format.pp
 
@@ -309,7 +354,9 @@ end = struct
   module S = Set.Make(X)
 
   type t = R.t M.t
-
+  type ring = R.t
+  type mon = X.t
+  
   let norm (x : R.t) : R.t option =
     if R.eq x R.zero then None else Some x
 

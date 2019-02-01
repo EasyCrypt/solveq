@@ -67,7 +67,8 @@ module S : sig (* module for polynomials *)
 end
 
 (* conversion functions *)
+module C : sig
+  val ring_to_monalg : ring -> S.t
 
-val ring_to_monalg : ring -> S.t
-
-val monalg_to_ring : S.t -> ring
+  val monalg_to_ring : S.t -> ring
+end

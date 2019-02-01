@@ -11,6 +11,7 @@ open Inverter
 open GroebnerBasis
 open Core
 
+
 let mon_pp = X.pp Format.pp_print_string;;
 let bi_pp fmt bi = Format.pp_print_int fmt  (Big_int.int_of_big_int bi);;
 let r_pp = R.pp bi_pp;;
@@ -22,6 +23,16 @@ let t_pp = T.pp mon_pp r_pp;;
 #install_printer r_pp;;
 #install_printer bi_pp;;
 #install_printer mon_pp;;
+
+
+let g = Add(Var 1,Var 2);;
+
+compute_inv 1 g;;
+
+
+let g2 = Add(Var 1,Opp(Var 2));;
+
+compute_inv 1 g2;;
 
 
 let pol = AddR( MultR(VarR 1,VarR 2),VarR 3  );;

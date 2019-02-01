@@ -35,12 +35,12 @@ let rec div_and_indep (v:pvar) p =
    v -> r(v) *)
 let compute_inv_ring (v:var) (r:ring) =
   try
-    let p = ring_to_monalg r in (* we put p in normal form, inside a monalg *)
+    let p = C.ring_to_monalg r in (* we put p in normal form, inside a monalg *)
     let sv = pvar_of_var v in
     let (p1,p2)= split_pol sv p S.zero in (* we split p in p1+p2, where p2 does not contain v *)
     let p1 = div_and_indep sv p1 in (* we divide p1 by v, and obtain a polynom independant from v *)
     (* Here p = v*p1+p2 *)
-    let p1 = monalg_to_ring p1 and p2 = monalg_to_ring p2 in
+    let p1 = C.monalg_to_ring p1 and p2 = C.monalg_to_ring p2 in
     match p1 with
     |UnitR -> Some(AddR(VarR v, OppR(p2)))
     |_ -> Some(MultR(AddR(VarR v, OppR(p2)), InvR(p1))) (* we return a fraction, might be necessary to check that inv not null *)
@@ -64,7 +64,7 @@ let compute_inv_ring_tuple (vs:var list) (rs:ring list) : ring list option=
         let ps = List.fold_left (fun acc elem ->
             counter := !counter+1;
             let fresh_var =  S.form R.unit (X.ofvar (pvar_of_var (!counter)  ~pref:"f" ))  in
-            let poly = ring_to_monalg elem in
+            let poly = C.ring_to_monalg elem in
               (S.(-!) poly fresh_var )::acc
           ) [] rs in 
 
@@ -76,7 +76,7 @@ let compute_inv_ring_tuple (vs:var list) (rs:ring list) : ring list option=
                 let module M = Map.Make(X) in
                 let module Se = Set.Make(V) in
                 let varset = M.fold (fun m r acc-> Se.union acc (X.varset m)) (S.tomap q) Se.empty in
-                if Se.is_empty (Se.inter varset private_vars) then (monalg_to_ring (S.(~!) q))
+                if Se.is_empty (Se.inter varset private_vars) then (C.monalg_to_ring (S.(~!) q))
                 else raise NoInv
           ) vs
         in  (* must check in deduc if the reduced form contains only -t elements *)
@@ -85,17 +85,22 @@ let compute_inv_ring_tuple (vs:var list) (rs:ring list) : ring list option=
 
 
 
+let opp_group x =
+  match x with
+  |Opp g -> g
+  |g-> Opp g
+
 (* Given a group element g depending on v, try to compute the inverse of
    v -> g(v) *)
 let rec compute_inv (v:var) (g:group) =
   match g with
   | Zero -> None
-  | Opp g -> Opt.map (fun x -> Opp x) (compute_inv v g)
+  | Opp g -> Opt.map opp_group (compute_inv v g)
   | Var x -> if x=v then Some (Var v) else None
   | Add(g1,g2) ->
       match (compute_inv v g1,compute_inv v g2) with
       | None, None -> None
-      | Some g, None -> Some (Add (g,Opp g2))
-      | None, Some g -> Some (Add (Opp g1,g))
+      | Some g, None -> Some (Add (g,opp_group g2))
+      | None, Some g -> Some (Add (opp_group g1,g))
       | _,_ -> None
      
