@@ -25,6 +25,8 @@ exception NoInv
 
 module R = IntField   (* module for fields elements *)
 
+module B = BoolField (* finite field of characteristic 2 *)
+  
 type pvar = String.t
 
 val pvar_of_var : ?pref:string -> var -> pvar
@@ -50,7 +52,7 @@ module X : sig  (* module for monomials *)
   val pp : V.t Core.Format.pp -> t Core.Format.pp
 end
     
-module S : sig (* module for polynomials *)
+module S : sig (* module for polynomials over int fields *)
   type t = Monalg.MonAlg(X)(R).t
   val zero : t
   val unit : t
@@ -66,9 +68,26 @@ module S : sig (* module for polynomials *)
   val pp : X.t Core.Format.pp -> R.t Core.Format.pp -> t Core.Format.pp
 end
 
+module SB : sig (* module for polynomials over finite field of characteristic 2 *)
+  type t = Monalg.MonAlg(X)(B).t
+  type ring = B.t
+  type mon = X.t
+  val zero : t
+  val unit : t
+  val ( +! ) : t -> t -> t
+  val ( -! ) : t -> t -> t
+  val ( ~! ) : t -> t
+  val ( *! ) : t -> t -> t
+  val eq : t Core.Ord.eq
+  val compare : t Core.Ord.comp
+  val form : ring -> mon -> t
+  val split : t -> ((mon * ring) * t) option
+  val pp : X.t Core.Format.pp -> B.t Core.Format.pp -> t Core.Format.pp
+  val tomap : t -> B.t Core.Map.Make(X).t
+end
+
 (* conversion functions *)
 module C : sig
   val ring_to_monalg : ring -> S.t
-
   val monalg_to_ring : S.t -> ring
 end

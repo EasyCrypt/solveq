@@ -62,8 +62,12 @@ module BoolBigInt : BigIntVal = struct let x = Big_int.big_int_of_int 2 end
 module BoolMod = Modulo(BoolBigInt)
 
 
-module FiniteField(M : Modulo) : Ring with type t = Big_int.big_int = struct
+module FiniteField(M : Modulo) : sig
+  include Ring with type t = Big_int.big_int
 
+  val pp : Big_int.big_int Format.pp -> t Format.pp
+             
+end = struct
   type t = Big_int.big_int
 
   let zero : t = Big_int.zero_big_int
@@ -76,6 +80,9 @@ module FiniteField(M : Modulo) : Ring with type t = Big_int.big_int = struct
 
   let eq = fun x y -> Big_int.eq_big_int (M.modulo x) (M.modulo y)
   let compare = fun x y -> Big_int.compare_big_int (M.modulo x) (M.modulo y)
+
+   let pp (ppx : Big_int.big_int Format.pp) (fmt : Format.formatter) (p : t) =
+      Format.fprintf fmt "%a" ppx p
 end
 
 module BoolField = FiniteField(BoolMod)

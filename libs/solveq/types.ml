@@ -20,37 +20,36 @@ type ring =
 
 module R = Monalg.IntField
 
-(*
-module V : Monalg.Var with type t = Int.t = struct
-  type t = Int.t
-
-  let eq a b = Int.equal a b
-  let  compare a b = Int.compare a b (* we use Groebner basis with lexicographic order on integer variables *)
-end
-*)
+module B = Monalg.BoolField
 
 type pvar = String.t
              
 module V : Monalg.Var with type t = pvar = struct
   type t = String.t
-
+             
   let eq a b = String.equal a b
+      
   let  compare a b = String.compare a b
+      
 end 
 
 module X = Monalg.Multinom(V)  (* the monomials over variables *)
     
-module S = Monalg.MonAlg(X)(R) (* polynomials *)
+module S = Monalg.MonAlg(X)(R) (* polynomials over intfield *)
+
+module SB = Monalg.MonAlg(X)(B) (* polynomials over field of caracteristic 2 *)
+
+
 
 exception NoInv
 
-  let pvar_of_var ?(pref="x") (x:var) : pvar =
-    (String.concat "" [pref;Int.to_string x])
-
-  let var_of_pvar (x:pvar) : var =
-    Int.of_string (String.sub x 1 ((String.length x)-1))
-      
 (* We define a canonical mapping between ring variables (int) and monalg variables (string), mapping variables i to "xi"*)
+let pvar_of_var ?(pref="x") (x:var) : pvar =
+  (String.concat "" [pref;Int.to_string x])
+
+let var_of_pvar (x:pvar) : var =
+  Int.of_string (String.sub x 1 ((String.length x)-1))
+      
 module Converter(R : Monalg.Ring)(S : Monalg.MonAlgebra with type ring = R.t and type mon = X.t) : sig
   val ring_to_monalg : ring -> S.t
   val monalg_to_ring : S.t -> ring

@@ -13,15 +13,18 @@ open Core
     
 let mon_pp = X.pp Format.pp_print_string;;
 let bi_pp fmt bi = Format.pp_print_int fmt  (Big_int.int_of_big_int bi);;
+let b_pp = B.pp bi_pp;;
 let r_pp = R.pp bi_pp;;
 let s_pp = S.pp mon_pp r_pp;;
 let t_pp = T.pp mon_pp r_pp;;
 let p_pp = P.pp s_pp s_pp;;
+let sb_pp = SB.pp mon_pp b_pp;;
 #install_printer s_pp;;
 #install_printer t_pp;;
 #install_printer p_pp;;
 #install_printer r_pp;;
 #install_printer bi_pp;;
+#install_printer sb_pp;;
 #install_printer mon_pp;;
 (* polynomials displayed from biggest to monom to smallest *)
 
@@ -77,4 +80,18 @@ let Some((x,r),p) = S.split q;;
 S.(~!) p;;
 let Some((x,r),p) = S.split (S.(~!) p);;
 R.(~!) r;;
+
+
+(* boolean examples *)
+
+
+let bpy = SB.form B.unit m2;;
+
+let null = SB.( +!) bpy bpy;;
+
+let bp1 = SB.( +! ) (SB.form B.unit m4) (bpy) and bsp1 = SB.form B.unit (X.ofvar "sp1");; (* xy+y *)
+
+let bp2 =  (SB.form B.unit m4) and bsp2 = SB.form B.unit (X.ofvar "sp2");; (* xy *)
+
+let py = SB.( +!) bp1 bp2;; (* xy+y+xy = y *)
 
