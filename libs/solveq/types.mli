@@ -52,22 +52,8 @@ module X : sig  (* module for monomials *)
   val pp : V.t Core.Format.pp -> t Core.Format.pp
 end
     
-module S : sig (* module for polynomials over int fields *)
-  type t = Monalg.MonAlg(X)(R).t
-  val zero : t
-  val unit : t
-  val ( +! ) : t -> t -> t
-  val ( -! ) : t -> t -> t
-  val ( ~! ) : t -> t
-  val ( *! ) : t -> t -> t
-  val eq : t Core.Ord.eq
-  val compare : t Core.Ord.comp
-  val form : R.t -> X.t -> t
-  val tomap : t -> R.t Map.Make(X).t
-  val split : t -> ((X.t * R.t) * t) option
-  val pp : X.t Core.Format.pp -> R.t Core.Format.pp -> t Core.Format.pp
-end
-
+module S :Monalg.MonAlgebra with type ring = R.t and type mon = X.t
+                                                                  
 module SB : sig (* module for polynomials over finite field of characteristic 2 *)
   type t = Monalg.MonAlg(X)(B).t
   type ring = B.t
@@ -83,11 +69,30 @@ module SB : sig (* module for polynomials over finite field of characteristic 2 
   val form : ring -> mon -> t
   val split : t -> ((mon * ring) * t) option
   val pp : X.t Core.Format.pp -> B.t Core.Format.pp -> t Core.Format.pp
-  val tomap : t -> B.t Core.Map.Make(X).t
 end
 
-(* conversion functions *)
-module C : sig
-  val ring_to_monalg : ring -> S.t
-  val monalg_to_ring : S.t -> ring
-end
+module Converter : functor
+  (R : Monalg.Ring) (S : sig
+                           type t
+                           type ring = R.t
+                           type mon = X.t
+                           val zero : t
+                           val unit : t
+                           val ( +! ) : t -> t -> t
+                           val ( -! ) : t -> t -> t
+                           val ( ~! ) : t -> t
+                           val ( *! ) : t -> t -> t
+                           val eq : t Core.Ord.eq
+                           val compare : t Core.Ord.comp
+                           val form : ring -> mon -> t
+                           val split : t -> ((mon * ring) * t) option
+                           val pp :
+                             mon Core.Format.pp ->
+                             ring Core.Format.pp -> t Core.Format.pp
+                         end) ->
+  sig
+    val ring_to_monalg : ring -> S.t
+    val monalg_to_ring : S.t -> ring
+    val varset : S.t -> Core.Set.Make(V).t
+  end
+

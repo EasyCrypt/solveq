@@ -15,9 +15,13 @@ open Core
 let mon_pp = X.pp Format.pp_print_string;;
 let bi_pp fmt bi = Format.pp_print_int fmt  (Big_int.int_of_big_int bi);;
 let r_pp = R.pp bi_pp;;
+let b_pp = B.pp bi_pp;;
 let s_pp = S.pp mon_pp r_pp;;
+let sb_pp = SB.pp mon_pp b_pp;;
 let t_pp = T.pp mon_pp r_pp;;
 #install_printer s_pp;;
+#install_printer b_pp;;
+#install_printer sb_pp;;
 #install_printer t_pp;;
 #install_printer p_pp;;
 #install_printer r_pp;;

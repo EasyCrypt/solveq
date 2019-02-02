@@ -53,6 +53,8 @@ let var_of_pvar (x:pvar) : var =
 module Converter(R : Monalg.Ring)(S : Monalg.MonAlgebra with type ring = R.t and type mon = X.t) : sig
   val ring_to_monalg : ring -> S.t
   val monalg_to_ring : S.t -> ring
+  val varset : S.t -> Set.Make(V).t
+
 end =
 struct  
   let rec ring_to_monalg (r:ring) =
@@ -114,6 +116,16 @@ struct
           else
             raise NoInv
         end
+
+
+  let varset (p:S.t) =
+    let module M = Map.Make(X) in
+    let module Se = Set.Make(V) in
+    let rec acc (q:S.t) =
+      match (S.split q) with
+      | None -> Se.empty
+      | Some((x,m),r) -> Se.union (X.varset x) (acc r) in
+    acc p   
 end
 
 module C = Converter(R)(S)

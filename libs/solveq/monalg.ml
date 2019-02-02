@@ -25,6 +25,7 @@ module type Ring = sig
   val ( *! ) : t -> t -> t
   include Ord.Eq   with type t := t
   include Ord.Comp with type t := t
+
 end
 
 (* -------------------------------------------------------------------- *)
@@ -61,9 +62,19 @@ module BoolBigInt : BigIntVal = struct let x = Big_int.big_int_of_int 2 end
 
 module BoolMod = Modulo(BoolBigInt)
 
+(* -------------------------------------------------------------------- *)
+module type Field = sig
+  include Ring
+ 
+  val ( /! ) : t -> t -> t
 
+  val lcm : t -> t -> t
+
+end
+
+(* -------------------------------------------------------------------- *)
 module FiniteField(M : Modulo) : sig
-  include Ring with type t = Big_int.big_int
+  include Field with type t = Big_int.big_int
 
   val pp : Big_int.big_int Format.pp -> t Format.pp
              
@@ -77,9 +88,12 @@ end = struct
   let ( -! ) = fun x y -> M.modulo (Big_int.sub_big_int x y)
   let ( ~! ) = fun x -> M.modulo (Big_int.minus_big_int x)
   let ( *! ) = fun x y -> M.modulo (Big_int.mult_big_int x y)
-
+  let (/!) = fun x y ->  Big_int.div_big_int (M.modulo x) (M.modulo y)
+      
   let eq = fun x y -> Big_int.eq_big_int (M.modulo x) (M.modulo y)
   let compare = fun x y -> Big_int.compare_big_int (M.modulo x) (M.modulo y)
+
+  let lcm = fun x y -> if eq (M.modulo x) unit && eq (M.modulo y) unit then unit else zero
 
    let pp (ppx : Big_int.big_int Format.pp) (fmt : Format.formatter) (p : t) =
       Format.fprintf fmt "%a" ppx p
@@ -87,18 +101,8 @@ end
 
 module BoolField = FiniteField(BoolMod)
 
-(* -------------------------------------------------------------------- *)
-module type Field = sig
-  include Ring
- 
-  val ( /! ) : t -> t -> t
-end
-
-(* -------------------------------------------------------------------- *)
 module IntField : sig
   include  Field with type t = Big_int.big_int * Big_int.big_int 
-
-  val lcm : t -> t -> t
 
   val pp : Big_int.big_int Format.pp -> t Format.pp
 end = struct
@@ -344,6 +348,8 @@ module type MonAlgebra = sig
 
   val split : t -> ((mon * ring) * t) option  (* return the leading monomial and the remainder *)
 
+  val pp : mon Format.pp -> ring Format.pp -> t Format.pp
+
   end
 
 module MonAlg(X : Monoid)(R : Ring) : sig
@@ -351,12 +357,8 @@ module MonAlg(X : Monoid)(R : Ring) : sig
 
   include MonAlgebra with type t := t and type ring = R.t and type mon = X.t (* and a bit more :) *)
 
-
-  val pp : X.t Format.pp -> R.t Format.pp -> t Format.pp
-
-  val tomap : t -> R.t Map.Make(X).t
-
-end = struct
+  end
+ = struct
   module M = Map.Make(X)
   module S = Set.Make(X)
 
@@ -370,9 +372,6 @@ end = struct
   let dfl (x : R.t option) : R.t =
     Opt.default R.zero x
 
-  let tomap (p:t) =
-    p
-      
   let zero : t =
     M.empty
 
