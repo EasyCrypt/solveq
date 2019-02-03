@@ -9,7 +9,7 @@ module Empty = Set.Make(V) (* an empty set *)
 module InvertMonalg(R : Field)(S : Monalg.MonAlgebra with type ring = R.t and type mon = X.t) =
 struct
   module C = Converter(R)(S)
-  module GB = GroebnerBasis(R)(S)
+  module GB = GB(R)(S)
       
   let split_pol (v:pvar) p1 =
     let rec split_pol_acc (v:pvar) p1 p2 =

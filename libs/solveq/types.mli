@@ -71,6 +71,10 @@ module SB : sig (* module for polynomials over finite field of characteristic 2 
   val pp : X.t Core.Format.pp -> B.t Core.Format.pp -> t Core.Format.pp
 end
 
+module P : Monalg.ProductAlgebra with type ringA = S.t and type ringB = S.t
+
+module PB : Monalg.ProductAlgebra with type ringA = SB.t and type ringB = SB.t
+
 module Converter : functor
   (R : Monalg.Ring) (S : sig
                            type t

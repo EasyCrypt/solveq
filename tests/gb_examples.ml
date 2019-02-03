@@ -16,11 +16,9 @@ let bi_pp fmt bi = Format.pp_print_int fmt  (Big_int.int_of_big_int bi);;
 let b_pp = B.pp bi_pp;;
 let r_pp = R.pp bi_pp;;
 let s_pp = S.pp mon_pp r_pp;;
-let t_pp = T.pp mon_pp r_pp;;
 let p_pp = P.pp s_pp s_pp;;
 let sb_pp = SB.pp mon_pp b_pp;;
 #install_printer s_pp;;
-#install_printer t_pp;;
 #install_printer p_pp;;
 #install_printer r_pp;;
 #install_printer bi_pp;;
@@ -33,6 +31,7 @@ let sb_pp = SB.pp mon_pp b_pp;;
 (* Examples for Groebner Basis.                                              *)
 (* ------------------------------------------------------------------------- *)
 
+module GB = GroebnerBasis.ProdGB(R)(S)(P)
 
 let x = "x" and y = "y" and z =  "z";;
 
@@ -64,22 +63,12 @@ S.split p1;;
 
 Int.compare 3 4;;
 
-let sp = spoly priv (p1,sp1) (p2,sp2);;
-
-GroebnerBasis.reduce priv [(p1,sp1);(p2,sp2)] (Opt.get sp);;
-
-let gb = groebner priv ([(p1,sp1);(p2,sp2)]);; 
+let gb = GB.groebner priv ([(p1,sp1);(p2,sp2)]);; 
 
 let t = P.i1 p1;;
 
-deduc priv [(p1,sp1)] (P.i1 p1);;
-deduc priv gb (P.i1 py);;
-
-let p,q = Opt.get (GroebnerBasis.reduce priv gb (P.i1 py));;
-let Some((x,r),p) = S.split q;;
-S.(~!) p;;
-let Some((x,r),p) = S.split (S.(~!) p);;
-R.(~!) r;;
+GB.deduc priv [(p1,sp1)] (P.i1 p1);;
+GB.deduc priv gb (P.i1 py);;
 
 
 (* boolean examples *)

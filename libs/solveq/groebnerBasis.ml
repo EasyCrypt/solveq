@@ -7,116 +7,110 @@ open Num.TaggedInfix
 open Monalg
 open Types
      
-(* ------------------------------------------------------------------------- *)
-(* Defining polynomial types                                                 *)
-(* ------------------------------------------------------------------------- *)
-
-
 module Y = Set.Make(V)         (* the set of private variables *)
-module Z = Monalg.Multinom(V)  (* the monomials for ghost variables *)
 
-module T = Monalg.MonAlg(Z)(R)
-
+exception ReduceFailure
 
 (* ------------------------------------------------------------------------- *)
 (* Defining GB for a product algebra of polynoms.                            *)
 (* We manipulate elements of the form (P,Q), where the second composante may *)
 (* allow us to keep track of the computations                                *)
 (* ------------------------------------------------------------------------- *)
-
-module P = Monalg.ProdAlg(S)(S)
-
-let is_zero ((p, q) : P.t) : bool =
+    
+module ProdGB(R : Field)(S : Monalg.MonAlgebra with type ring = R.t and type mon = X.t)(P : Monalg.ProductAlgebra with type ringA = S.t and type ringB = S.t) :
+sig
+  val groebner : Set.Make(V).t -> P.t list -> P.t list
+  val deduc : Y.t -> P.t list -> P.t -> S.t option
+end = struct
+  let is_zero ((p, q) : P.t) : bool =
     S.eq p S.zero
 
-(* ------------------------------------------------------------------------- *)
-(* Reduce monomial cm by polynomial pol, returning replacement for cm.       *)
-(* ------------------------------------------------------------------------- *)
+  (* ------------------------------------------------------------------------- *)
+  (* Reduce monomial cm by polynomial pol, returning replacement for cm.       *)
+  (* ------------------------------------------------------------------------- *)
 
-let reduce1 (priv : Y.t) ((m, c) : X.t * R.t) ((p, q) : P.t) =
-  match (S.split p) with
+  let reduce1 (priv : Y.t) ((m, c) : X.t * R.t) ((p, q) : P.t) =
+    match (S.split p) with
     | None -> None
     | Some(((m2, c2), remainder)) -> 
       try
         let x, r = (X.( */ ) priv m m2, R.( ~!)  (R.( /! ) c c2)) in Some(P.( *! ) (S.form r x, S.form r x) (remainder, q))
-        with X.DivFailure -> None
+      with X.DivFailure -> None
 
-(* ------------------------------------------------------------------------- *)
-(* Try this for all polynomials in a basis.                                  *)
-(* ------------------------------------------------------------------------- *)
+  (* ------------------------------------------------------------------------- *)
+  (* Try this for all polynomials in a basis.                                  *)
+  (* ------------------------------------------------------------------------- *)
 
-exception ReduceFailure
+  let reduceb mp cm pols =
+    try  List.find_map (reduce1 mp cm) pols
+    with Not_found -> raise ReduceFailure
 
-let reduceb mp cm pols =
-  try  List.find_map (reduce1 mp cm) pols
-  with Not_found -> raise ReduceFailure
+  (* ------------------------------------------------------------------------- *)
+  (* Reduction of a polynomial (always picking largest monomial possible).     *)
+  (* ------------------------------------------------------------------------- *)
 
-(* ------------------------------------------------------------------------- *)
-(* Reduction of a polynomial (always picking largest monomial possible).     *)
-(* ------------------------------------------------------------------------- *)
-
-let rec reduce mp pols ((p, q) : P.t)=
-  match (S.split p) with
-  | None -> Some(p,q)
-  | Some(((m, c), remainder)) -> 
+  let rec reduce mp pols ((p, q) : P.t)=
+    match (S.split p) with
+    | None -> Some(p,q)
+    | Some(((m, c), remainder)) -> 
       try  reduce mp pols (P.(+!) (reduceb  mp (m, c) pols) (remainder,q))
       with ReduceFailure -> 
-        match (reduce mp pols (remainder, q)) with
-            |None -> None
-            |Some(pq) -> Some(P.(+!) pq (P.i1 (S.form c m)))
+      match (reduce mp pols (remainder, q)) with
+      |None -> None
+      |Some(pq) -> Some(P.(+!) pq (P.i1 (S.form c m)))
 
-(* ------------------------------------------------------------------------- *)
-(* Compute S-polynomial of two polynomials.                                  *)
-(* ------------------------------------------------------------------------- *)
+  (* ------------------------------------------------------------------------- *)
+  (* Compute S-polynomial of two polynomials.                                  *)
+  (* ------------------------------------------------------------------------- *)
 
-let spoly priv ((p1, q1) : P.t) ((p2, q2) : P.t) =
-  match (S.split p1, S.split p2) with
-  | (None, _ ) -> None
-  | (_ , None) -> None
-  | (Some(((m1, c1), r1)),Some(((m2, c2), r2))) ->
-     let m = X.lcm m1 m2 and c = R.lcm c1 c2 in
-     let x1, r1 = (X.( */ ) priv m m1, R.( ~!)  (R.( /! ) c c1)) in
-     let x2, r2 = (X.( */ ) priv m m2, R.( ~!)  (R.( /! ) c c2)) in
-     let mul1 = (S.form r1 x1, S.form r1 x1) and mul2 = (S.form r2 x2, S.form r2 x2) in
-		Some(P.( -!) (P.( *! ) mul1 (p1, q1))
-					 (P.( *! ) mul2 (p2, q2))
-			)
-(* ------------------------------------------------------------------------- *)
-(* Grobner basis algorithm for free multi-module                             *)
-(* ------------------------------------------------------------------------- *)
+  let spoly priv ((p1, q1) : P.t) ((p2, q2) : P.t) =
+    match (S.split p1, S.split p2) with
+    | (None, _ ) -> None
+    | (_ , None) -> None
+    | (Some(((m1, c1), r1)),Some(((m2, c2), r2))) ->
+      let m = X.lcm m1 m2 and c = R.lcm c1 c2 in
+      let x1, r1 = (X.( */ ) priv m m1, R.( ~!)  (R.( /! ) c c1)) in
+      let x2, r2 = (X.( */ ) priv m m2, R.( ~!)  (R.( /! ) c c2)) in
+      let mul1 = (S.form r1 x1, S.form r1 x1) and mul2 = (S.form r2 x2, S.form r2 x2) in
+      Some(P.( -!) (P.( *! ) mul1 (p1, q1))
+	     (P.( *! ) mul2 (p2, q2))
+	  )
+  (* ------------------------------------------------------------------------- *)
+  (* Grobner basis algorithm for free multi-module                             *)
+  (* ------------------------------------------------------------------------- *)
 
-let rec grobner priv basis pairs =
-  match pairs with
-  | [] -> basis
-  
-  | (p1, p2) :: opairs ->
+  let rec grobner priv basis pairs =
+    match pairs with
+    | [] -> basis
+
+    | (p1, p2) :: opairs ->
       try
-		match (spoly priv p1 p2) with
-			|None ->  grobner priv basis opairs
-			|Some(spol) ->
-	        match (reduce priv basis spol) with
-				|None -> grobner priv basis opairs
-				|Some(sp) ->
-                    if (is_zero sp) then 
-                         grobner priv basis opairs
-                    else
-       	        	  let newcps = List.map (fun p -> p,sp) basis in
-        	        	grobner priv (sp::basis) (opairs @ newcps)
+	match (spoly priv p1 p2) with
+	|None ->  grobner priv basis opairs
+	|Some(spol) ->
+	  match (reduce priv basis spol) with
+	  |None -> grobner priv basis opairs
+	  |Some(sp) ->
+            if (is_zero sp) then 
+              grobner priv basis opairs
+            else
+       	      let newcps = List.map (fun p -> p,sp) basis in
+              grobner priv (sp::basis) (opairs @ newcps)
       with ReduceFailure | X.DivFailure -> grobner priv basis opairs
 
-(* ------------------------------------------------------------------------- *)
-(* Overall function.                                                         *)
-(* ------------------------------------------------------------------------- *)
+  (* ------------------------------------------------------------------------- *)
+  (* Overall function.                                                         *)
+  (* ------------------------------------------------------------------------- *)
 
-let groebner priv pols =
-  grobner priv pols (List.product pols)
+  let groebner priv pols =
+    grobner priv pols (List.product pols)
 
-(* deduc expects to get has input a groeber basis *)
-let deduc priv basis secret =
-        match (reduce priv basis secret) with
-            |None -> None
-            |Some((p,q)) -> Some(S.( ~!) q)
-
+  (* deduc expects to get has input a groeber basis *)
+  let deduc priv basis secret =
+    match (reduce priv basis secret) with
+    |None -> None
+    |Some((p,q)) -> Some(S.( ~!) q)
+end
 
 
 
@@ -124,7 +118,7 @@ let deduc priv basis secret =
 (* ------------------------------------------------------------------------- *)
 (* Defining GB for basic polynoms.                                           *)
 (* ------------------------------------------------------------------------- *)
-module GroebnerBasis(R : Field)(S : Monalg.MonAlgebra with type ring = R.t and type mon = X.t) :
+module GB(R : Field)(S : Monalg.MonAlgebra with type ring = R.t and type mon = X.t) :
 sig
   val groebner : Set.Make(V).t -> S.t list -> S.t list
   val deduc : Y.t -> S.t list -> S.t -> S.t option

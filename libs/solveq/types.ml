@@ -39,7 +39,9 @@ module S = Monalg.MonAlg(X)(R) (* polynomials over intfield *)
 
 module SB = Monalg.MonAlg(X)(B) (* polynomials over field of caracteristic 2 *)
 
+module P = Monalg.ProdAlg(S)(S)
 
+module PB = Monalg.ProdAlg(SB)(SB)
 
 exception NoInv
 

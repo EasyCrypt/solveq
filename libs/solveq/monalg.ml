@@ -428,20 +428,26 @@ module MonAlg(X : Monoid)(R : Ring) : sig
 end
 
 (* -------------------------------------------------------------------- *)
-module ProdAlg(A : Ring)(B : Ring) : sig
-  type t = A.t * B.t
+module type ProductAlgebra = sig
+  type ringA
+  type ringB
+  type t = ringA * ringB
 
-  include Ring with type t := t 
+ include Ring with type t := t 
 
-  val pi1 : t -> A.t  
-  val pi2 : t -> B.t
+  val pi1 : t -> ringA
+  val pi2 : t -> ringB
 
-  val i1 : A.t -> t
-  val i2 : B.t -> t
+  val i1 : ringA -> t
+  val i2 : ringB -> t
 
-  val pp : A.t Format.pp -> B.t Format.pp -> t Format.pp
-end = struct
+  val pp : ringA Format.pp -> ringB Format.pp -> t Format.pp
+end
 
+module ProdAlg(A : Ring)(B : Ring) : ProductAlgebra with type ringA = A.t and type ringB = B.t = struct
+
+  type ringA = A.t
+  type ringB = B.t
   type t = A.t * B.t
 
   let pi1 ((p, q) : t) : A.t = p
