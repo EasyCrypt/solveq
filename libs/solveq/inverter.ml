@@ -67,7 +67,6 @@ struct
     try
       let private_vars = (Y.of_list (List.map pvar_of_var vs)) in (* we first define every variables as private, not know to the adversary *)
       let counter = ref (0) in
-      let mapping = Array.make (List.length rs) ZeroR in
       let ps = List.fold_left (fun acc elem ->
           counter := !counter+1;
           let fresh_var =  S.form R.unit (X.ofvar (pvar_of_var (!counter)  ~pref:"f" ))  in
