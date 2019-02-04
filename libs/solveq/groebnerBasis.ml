@@ -21,6 +21,8 @@ module ProdGB(R : Field)(S : Monalg.MonAlgebra with type ring = R.t and type mon
 sig
   val groebner : Set.Make(V).t -> P.t list -> P.t list
   val deduc : Y.t -> P.t list -> P.t -> S.t option
+  val syz : Y.t -> P.t list -> S.t list
+
 end = struct
   let is_zero ((p, q) : P.t) : bool =
     S.eq p S.zero
@@ -98,12 +100,33 @@ end = struct
               grobner priv (sp::basis) (opairs @ newcps)
       with ReduceFailure | X.DivFailure -> grobner priv basis opairs
 
+  let rec syzygie priv basis pairs syz=
+    match pairs with
+    | [] -> syz
+
+    | (p1, p2) :: opairs ->
+      try
+	match (spoly priv p1 p2) with
+	|None ->  syzygie priv basis opairs syz
+	|Some(spol) ->
+	  match (reduce priv basis spol) with
+	  |None -> syzygie priv basis opairs syz
+	  |Some(sp) ->
+            if (is_zero sp) then 
+              syzygie priv basis opairs ((P.pi2 sp)::syz)
+            else
+       	      let newcps = List.map (fun p -> p,sp) basis in
+              syzygie priv (sp::basis) (opairs @ newcps) syz
+      with ReduceFailure | X.DivFailure -> syzygie priv basis opairs syz
   (* ------------------------------------------------------------------------- *)
   (* Overall function.                                                         *)
   (* ------------------------------------------------------------------------- *)
 
   let groebner priv pols =
     grobner priv pols (List.product pols)
+
+  let syz priv pols =
+    syzygie priv pols (List.product pols) []
 
   (* deduc expects to get has input a groeber basis *)
   let deduc priv basis secret =
@@ -200,13 +223,14 @@ end = struct
               grobner priv (sp::basis) (opairs @ newcps)
       with ReduceFailure | X.DivFailure -> grobner priv basis opairs
 
+
   (* ------------------------------------------------------------------------- *)
   (* Overall function.                                                         *)
   (* ------------------------------------------------------------------------- *)
 
   let groebner priv pols =
     grobner priv pols (List.product pols)
-
+  
   (* deduc expects to get has input a groeber basis *)
   let deduc priv basis secret =
     match (reduce priv basis secret) with

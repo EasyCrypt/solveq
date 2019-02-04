@@ -10,7 +10,8 @@ open Solveq
 open GroebnerBasis
 open Types
 open Core
-    
+open Interference
+
 let mon_pp = X.pp Format.pp_print_string;;
 let bi_pp fmt bi = Format.pp_print_int fmt  (Big_int.int_of_big_int bi);;
 let b_pp = B.pp bi_pp;;
@@ -36,8 +37,8 @@ module GB = GroebnerBasis.ProdGB(R)(S)(P)
 let x = "x" and y = "y" and z =  "z";;
 
 let priv = GroebnerBasis.Y.empty;; (* only z is fully known, and only g^x and g^y are known *)
-GroebnerBasis.Y.add x priv;;
-GroebnerBasis.Y.add y priv;;
+let priv = GroebnerBasis.Y.add x priv;;
+let priv = GroebnerBasis.Y.add y priv;;
 
 let m1 = X.ofvar x ;; (* x *)
 let m2 = X.ofvar y;; (* y *)
@@ -84,3 +85,29 @@ let bp2 =  (SB.form B.unit m4) and bsp2 = SB.form B.unit (X.ofvar "sp2");; (* xy
 
 let py = SB.( +!) bp1 bp2;; (* xy+y+xy = y *)
 
+(* indep examples *)
+
+
+
+let x = "x" and y = "y" and r =  "z";;
+
+let rnd = GroebnerBasis.Y.empty;; (* only z is fully known, and only g^x and g^y are known *)
+let rnd = GroebnerBasis.Y.add r rnd;;
+let det = GroebnerBasis.Y.of_list [x;y];;
+let m1 = X.ofvar x ;; (* x *)
+let m2 = X.ofvar y;; (* y *)
+let m3 = X.ofvar r;; (* z *)
+
+let p1 = S.( +! ) (S.form R.unit m1) (S.form R.unit m3);; (* x+r *)
+let p2 = S.( +! ) (S.form R.unit m2) (S.form R.unit m3);; (* y+r *)
+let p3 = (S.form R.unit m1);;
+module Dep = Interference.Dependencies(R)(S)(P);;
+module GB = GroebnerBasis.GB(R)(S);;
+module C = Converter(R)(S);;
+module Se = Set.Make(V);;
+    module M = Map.Make(V);;
+
+let basis1 = (Dep.get_dependencies [p1;p2] det rnd);; (* (x+r,y+r) is dependent from both x and y *)
+
+
+let basis2 =(Dep.get_dependencies [p2;p3] det rnd);; (* (y+r,x) is only dependent from x *)
