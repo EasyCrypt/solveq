@@ -6,8 +6,10 @@ open GroebnerBasis
 module Empty = Set.Make(V) (* an empty set *)
     
 
-module InvertMonalg(R : Field)(S : Monalg.MonAlgebra with type ring = R.t and type mon = X.t) =
-struct
+module InvertMonalg(R : Field)(S : Monalg.MonAlgebra with type ring = R.t and type mon = X.t) : sig
+  val euclidian_div : pvar -> S.t -> S.t * S.t
+  val inverter_tuple : pvar list -> S.t list -> S.t list
+end = struct
   module GB = GB(R)(S)
       
   let split_pol (v:pvar) p1 =

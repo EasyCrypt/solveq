@@ -10,7 +10,13 @@ struct
 
   module GB = GroebnerBasis.ProdGB(R)(S)(P)
   module M = Map.Make(V)
-      
+
+  exception Unknown
+
+  (* Given a list of polynoms pols, depending on deterministic variables detvars and random variables rndvars, computes all combinations of pols and deterministic variables such that it is equal to something only over deterministic variables.
+Those combinations corresponds to dependencies between some polynoms and determnistic variables. 
+We exctract from those combinations boundvars,boundpols,unboundpol where boundvars are the variable whose distribution is not independent from the distribution of boundpols. unboundpols are polynomials that depends on random variables, but might still reveal some informations on the deterministic variables.
+  *)
   let get_dependencies (pols : S.t list) (detvars : Set.Make(V).t) (rndvars : Set.Make(V).t) =
     (*  All variables in the polynom must be detvars union rnd vars. All variables in rndvars must be greater than those in detvars, and those in detvars greater than the fresh variable starting in "f". For instance, all variables in rndvar could be prefixed with "z", all those in det with "x". *)
     let counter = ref (0) in
@@ -35,6 +41,15 @@ struct
     let boundpol,unboundpol = M.partition (fun varpol pol -> Se.mem varpol boundvarpol) (!map) in
     let tolist = fun x -> List.map (fun (u,v) -> v) (M.bindings x) in
     Se.to_list boundvar, tolist boundpol, tolist unboundpol
+      
+  let check_indep (pols : S.t list) (detvars : Set.Make(V).t) (rndvars : Set.Make(V).t) =
+    (* we first collect the dependencies *)
+    let boundvars, boundpols, unboundpols = get_dependencies pols detvars rndvars in
+    (* we should now analyze the unbound polynomials, to see if they preserve interference *)
+    (* reasonable hypothesis at this point, unboundpols is independent from (detvars/boundvars) *)
+    ()
+    (* we first try to see unboundpols are uniforms, which implies independence *)
+  
 end
 
 

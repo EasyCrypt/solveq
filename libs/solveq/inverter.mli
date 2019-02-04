@@ -1,5 +1,12 @@
 open Types
 
+module InvertMonalg : functor
+  (R : Monalg.Field) (S : Monalg.MonAlgebra with type ring = R.t and type mon = X.t) ->
+  sig
+    val euclidian_div : Types.pvar -> S.t -> S.t * S.t
+    val inverter_tuple : Types.pvar list -> S.t list -> S.t list
+  end
+
 val compute_inv : var -> group -> group option
 
 (* inverter for ring elements in ring of infinite characteristic *)
