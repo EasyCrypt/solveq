@@ -144,3 +144,23 @@ Unif.naive_is_unif [p1] (rndvars);; (* true *)
 Unif.naive_is_unif [p4] rndvars;; (* false *)
 Unif.naive_is_unif [p1;p2] rndvars;; (* true *)
 Unif.naive_is_unif [p1;p3] rndvars;; (* false *)
+
+
+let x0 = "x0" and x1 = "x1" and y0 = "y0" and y1 = "y1" and r0 =  "r0" and r1 = "r1";;
+
+let mx0 = S.form R.unit (X.ofvar x0) ;;
+let mx1 = S.form R.unit (X.ofvar x1);;
+let my0 = S.form R.unit (X.ofvar y0);;
+let my1 = S.form R.unit (X.ofvar y1);;
+let mr0 = S.form R.unit (X.ofvar r0);;
+let mr1 = S.form R.unit (X.ofvar r1);;
+
+
+
+let rndvars = Se.of_list [r0;r1];;
+let detvars = Se.of_list [x0;x1;y0;y1];;
+
+let p1 = S.( +! ) mr0 (S. ( *! ) mx0 my1 );; (* r0 + x0y1 *)
+let p1 = S.( +! ) mr0 (S. ( *! ) mx1 my0 );; (* r0 + x1y0 *)
+
+Dep.check_indep [mx0;my0;p1] detvars rndvars;; (* x0 and y0 are bound, x1 and y1 are independent *)
