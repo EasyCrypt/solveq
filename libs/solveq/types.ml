@@ -1,6 +1,15 @@
 open Core
 
 type var = int
+             
+module IV : Monalg.Var with type t = var = struct
+  type t = var
+             
+  let eq a b = a == b
+      
+  let  compare a b = a - b
+      
+end 
 
 type group = 
   | Zero
@@ -45,7 +54,7 @@ module PB = Monalg.ProdAlg(SB)(SB)
 
 exception NoInv
 
-(* We define a canonical mapping between ring variables (int) and monalg variables (string), mapping variables i to "xi"*)
+(* We define a canonical mapping between ring variables (int) and monalg variables (string), mapping variables i to either "xi" for deterministic variable or "zi" for random variables *)
 let pvar_of_var ?(pref="x") (x:var) : pvar =
   (String.concat "" [pref;Int.to_string x])
 
@@ -53,13 +62,14 @@ let var_of_pvar (x:pvar) : var =
   Int.of_string (String.sub x 1 ((String.length x)-1))
       
 module Converter(R : Monalg.Ring)(S : Monalg.MonAlgebra with type ring = R.t and type mon = X.t) : sig
-  val ring_to_monalg : ring -> S.t
+  val ring_to_monalg : ?rndvars:Set.Make(IV).t -> ring -> S.t
   val monalg_to_ring : S.t -> ring
   val varset : S.t -> Set.Make(V).t
 
 end =
-struct  
-  let rec ring_to_monalg (r:ring) =
+struct
+  module Se = Set.Make(IV)
+  let rec ring_to_monalg ?(rndvars=Se.empty) (r:ring) =
     match r with
     | ZeroR -> S.zero
     | UnitR -> S.unit
@@ -67,7 +77,8 @@ struct
     | AddR (r1,r2) -> S.(+!) (ring_to_monalg r1) (ring_to_monalg r2)
     | MultR (r1,r2)-> S.( *! ) (ring_to_monalg r1) (ring_to_monalg r2)
     | InvR r1 -> raise NoInv
-    | VarR x -> S.form (R.unit) (X.ofvar (pvar_of_var x))
+    | VarR x -> let pvar = if Se.mem x rndvars then pvar_of_var ~pref:"z" x else pvar_of_var x in
+      S.form (R.unit) (X.ofvar pvar)
 
   let invert_pvar map pvar =
     let i = var_of_pvar pvar in

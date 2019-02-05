@@ -33,6 +33,8 @@ val pvar_of_var : ?pref:string -> var -> pvar
 
 val var_of_pvar : pvar -> var
 
+module IV : (Monalg.Var with type t = var)   (* module for variables *)
+
 module V : (Monalg.Var with type t = pvar)   (* module for variables *)
 
 module X : sig  (* module for monomials *)
@@ -95,7 +97,7 @@ module Converter : functor
                              ring Core.Format.pp -> t Core.Format.pp
                          end) ->
   sig
-    val ring_to_monalg : ring -> S.t
+    val ring_to_monalg : ?rndvars:Set.Make(IV).t -> ring -> S.t
     val monalg_to_ring : S.t -> ring
     val varset : S.t -> Core.Set.Make(V).t
   end

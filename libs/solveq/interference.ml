@@ -55,15 +55,15 @@ We exctract from those combinations boundvars,boundpols,unboundpol where boundva
       raise Unknown
 
   let check_indep_ring (rings : ring list) (detvars : var list) (rndvars : var list) =
-    let detvars = Se.of_list (List.map (pvar_of_var) detvars) and
-    rndvars = Se.of_list (List.map (pvar_of_var) rndvars) in
-    (* Here, we should have prefixes to detvars and rndvars so that the ordering invariant required for getdependencies are met *)
+    let detvars = Se.of_list (List.map (pvar_of_var ~pref:"x") detvars) and
+    rndvars = Se.of_list (List.map (pvar_of_var ~pref:"z") rndvars) in
+    (* Here, we have prefixes to detvars and rndvars so that the ordering invariant required for getdependencies are met *)
     let pols =  List.map C.ring_to_monalg rings in
     List.map (var_of_pvar) (check_indep pols detvars rndvars)
+(* given a list of rings elements, a list of deterministic variables,, either of infinite characteristic or characteristic two, we give back the set of dependent variables *)
 
 end
 
-(* given a list of rings elements, a list of deterministic variables,, either of infinite characteristic or characteristic two, we give back the set of dependent variables *)
 
 module RingDep =  Dependencies(R)(S)(P)
 
