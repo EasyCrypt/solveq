@@ -105,9 +105,42 @@ module Dep = Interference.Dependencies(R)(S)(P);;
 module GB = GroebnerBasis.GB(R)(S);;
 module C = Converter(R)(S);;
 module Se = Set.Make(V);;
+module SSe = Set.Make(Se);;
     module M = Map.Make(V);;
 
 let basis1 = (Dep.get_dependencies [p1;p2] det rnd);; (* (x+r,y+r) is dependent from both x and y *)
 
 
 let basis2 =(Dep.get_dependencies [p2;p3] det rnd);; (* (y+r,x) is only dependent from x *)
+
+
+module Unif = Uniform.Unif(R)(S)(P);;
+
+let s1 = Se.of_list [y];;
+let s2 = Se.of_list [x;z];;
+
+
+let subsets = Unif.all_sub_sets [s1;s2];;
+
+List.map (Se.to_list) (Unif.SSe.to_list subsets);;
+
+let x = "x" and y = "y" and r1 =  "r1" and r2 = "r2";;
+
+
+let rndvars = Se.of_list [r1;r2];;
+
+let m1 = X.ofvar x ;; (* x *)
+let m2 = X.ofvar y;; (* y *)
+let m3 = X.ofvar r1;; (* z *)
+let m4 = X.ofvar r2;;
+
+let p1 = S.( +! ) (S.form R.unit m1) (S.form R.unit m3);; (* x+r1 *)
+let p2 = S.( +! ) (S.form R.unit m2) (S.form R.unit m4);; (* y+r2 *)
+let p3 = S.( +! ) (S.form R.unit m2) (S.form R.unit m3);; (* y+r1 *)
+let p4 = (S.form R.unit m1);; (* x *)
+
+
+Unif.naive_is_unif [p1] (rndvars);; (* true *)
+Unif.naive_is_unif [p4] rndvars;; (* false *)
+Unif.naive_is_unif [p1;p2] rndvars;; (* true *)
+Unif.naive_is_unif [p1;p3] rndvars;; (* false *)
