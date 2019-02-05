@@ -11,7 +11,7 @@ struct
   module GB = GroebnerBasis.ProdGB(R)(S)(P)
   module M = Map.Make(V)
   module Se = Set.Make(V)
-  module ISe = Set.Make(IV)
+  module ISe = Set.Make(IntV)
       
   module U = Uniform.Unif(R)(S)(P)
   exception Unknown
@@ -56,7 +56,7 @@ We exctract from those combinations boundvars,boundpols,unboundpol where boundva
       (* should develop here for more complete methods*)
       raise Unknown
 
-  let check_indep_ring (rings : ring list) (detvars : Set.Make(IV).t) (rndvars : Set.Make(IV).t) =
+  let check_indep_ring (rings : ring list) (detvars : Set.Make(IntV).t) (rndvars : Set.Make(IntV).t) =
     let pols =  List.map (C.ring_to_monalg ~rndvars:(rndvars)) rings in
     let detvars = ISe.fold (fun var acc -> Se.add (pvar_of_var ~pref:"x" var) acc ) detvars Se.empty and
        rndvars = ISe.fold (fun var acc -> Se.add (pvar_of_var ~pref:"z" var) acc ) rndvars Se.empty in

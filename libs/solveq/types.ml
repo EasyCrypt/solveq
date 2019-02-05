@@ -2,7 +2,7 @@ open Core
 
 type var = int
              
-module IV : Monalg.Var with type t = var = struct
+module IntV : Monalg.Var with type t = var = struct
   type t = var
              
   let eq a b = a == b
@@ -11,6 +11,8 @@ module IV : Monalg.Var with type t = var = struct
       
 end 
 
+module IntVSet = Set.Make(IntV)
+    
 type group = 
   | Zero
   | Opp of group
@@ -42,6 +44,8 @@ module V : Monalg.Var with type t = pvar = struct
       
 end 
 
+module VSet = Set.Make(V)
+
 module X = Monalg.Multinom(V)  (* the monomials over variables *)
     
 module S = Monalg.MonAlg(X)(R) (* polynomials over intfield *)
@@ -62,14 +66,13 @@ let var_of_pvar (x:pvar) : var =
   Int.of_string (String.sub x 1 ((String.length x)-1))
       
 module Converter(R : Monalg.Ring)(S : Monalg.MonAlgebra with type ring = R.t and type mon = X.t) : sig
-  val ring_to_monalg : ?rndvars:Set.Make(IV).t -> ring -> S.t
+  val ring_to_monalg : ?rndvars:IntVSet.t -> ring -> S.t
   val monalg_to_ring : S.t -> ring
   val varset : S.t -> Set.Make(V).t
 
 end =
 struct
-  module Se = Set.Make(IV)
-  let rec ring_to_monalg ?(rndvars=Se.empty) (r:ring) =
+  let rec ring_to_monalg ?(rndvars=IntVSet.empty) (r:ring) =
     match r with
     | ZeroR -> S.zero
     | UnitR -> S.unit
@@ -77,7 +80,7 @@ struct
     | AddR (r1,r2) -> S.(+!) (ring_to_monalg r1) (ring_to_monalg r2)
     | MultR (r1,r2)-> S.( *! ) (ring_to_monalg r1) (ring_to_monalg r2)
     | InvR r1 -> raise NoInv
-    | VarR x -> let pvar = if Se.mem x rndvars then pvar_of_var ~pref:"z" x else pvar_of_var x in
+    | VarR x -> let pvar = if IntVSet.mem x rndvars then pvar_of_var ~pref:"z" x else pvar_of_var x in
       S.form (R.unit) (X.ofvar pvar)
 
   let invert_pvar map pvar =
