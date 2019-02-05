@@ -56,10 +56,10 @@ We exctract from those combinations boundvars,boundpols,unboundpol where boundva
       (* should develop here for more complete methods*)
       raise Unknown
 
-  let check_indep_ring (rings : ring list) (detvars : var list) (rndvars : var list) =
-    let pols =  List.map (C.ring_to_monalg ~rndvars:(ISe.of_list rndvars)) rings in
-    let detvars = Se.of_list (List.map (pvar_of_var ~pref:"x") detvars) and
-    rndvars = Se.of_list (List.map (pvar_of_var ~pref:"z") rndvars) in
+  let check_indep_ring (rings : ring list) (detvars : Set.Make(IV).t) (rndvars : Set.Make(IV).t) =
+    let pols =  List.map (C.ring_to_monalg ~rndvars:(rndvars)) rings in
+    let detvars = ISe.fold (fun var acc -> Se.add (pvar_of_var ~pref:"x" var) acc ) detvars Se.empty and
+       rndvars = ISe.fold (fun var acc -> Se.add (pvar_of_var ~pref:"z" var) acc ) rndvars Se.empty in
     (* Here, we have prefixes to detvars and rndvars so that the ordering invariant required for getdependencies are met *)
     List.map (var_of_pvar) (check_indep pols detvars rndvars)
 (* given a list of rings elements, a list of deterministic variables,, either of infinite characteristic or characteristic two, we give back the set of dependent variables *)
