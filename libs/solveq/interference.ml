@@ -48,14 +48,20 @@ We exctract from those combinations boundvars,boundpols,unboundpol where boundva
     (* we first collect the dependencies *)
     let boundvars, boundpols, unboundpols = get_dependencies pols detvars rndvars in
     (* we should now analyze the unbound polynomials, to see if they preserve interference *)
-    (* reasonable hypothesis at this point, unboundpols is independent from (detvars/boundvars) *)
-    if U.naive_is_unif unboundpols rndvars then
-      (* if the unbound pols are uniform, they reveal nothing about the remaining variables. The only bound variables as thus the ones found previously. *)
+    if unboundpols = [] then
       boundvars
     else
-      (* should develop here for more complete methods*)
-      raise Unknown
-
+      begin
+        (* reasonable hypothesis at this point, unboundpols is independent from (detvars/boundvars) *)
+        let rndvarsboundpol = List.fold_left  (fun acc pol -> Se.union (C.varset pol) acc) Se.empty boundpols in
+        
+        if U.naive_is_unif unboundpols (Se.diff rndvars rndvarsboundpol) then
+          (* if the unbound pols are uniform, they reveal nothing about the remaining variables. The only bound variables as thus the ones found previously. *)
+          boundvars
+        else
+          (* should develop here for more complete methods*)
+          raise Unknown
+      end
   let check_indep_ring (rings : ring list) (detvars : Set.Make(IntV).t) (rndvars : Set.Make(IntV).t) =
     let pols =  List.map (C.ring_to_monalg ~rndvars:(rndvars)) rings in
     let detvars = ISe.fold (fun var acc -> Se.add (pvar_of_var ~pref:"x" var) acc ) detvars Se.empty and
