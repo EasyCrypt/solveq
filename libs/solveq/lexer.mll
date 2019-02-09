@@ -8,7 +8,7 @@
   (* ------------------------------------------------------------------ *)
   let lex_error lexbuf msg =
     let loc = L.of_lexbuf lexbuf in
-    raise (Syntax.ParseError (Some loc, PE_LexicalError msg))
+    raise (Syntax.LexError (Some loc, PE_LexicalError msg))
 
   (* ------------------------------------------------------------------ *)
   let _keywords = [
@@ -39,7 +39,7 @@ rule main = parse
   | blank+        { main lexbuf }
   | ident  as id  { try Hashtbl.find keywords id with Not_found -> IDENT id }
   | digit+ as num { INT (Big_int.big_int_of_string num) }
-
+  
   | '+' { PLUS   }
   | '*' { STAR   }
   | '^' { HAT    }
@@ -47,6 +47,7 @@ rule main = parse
   | ')' { RPAREN }
   | '{' { LBRACE }
   | '}' { RBRACE }
+  | ',' { COMMA }
 
   | eof { EOF   }
 

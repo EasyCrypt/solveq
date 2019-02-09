@@ -25,6 +25,9 @@ build: lib
 lib:
 	$(OCAMLBUILD) libs/solveq.cmo libs/solveq.cmx
 
+main: 
+	$(OCAMLBUILD) libs/solveq/main.native
+
 examples: lib
 	cd tests && ocaml -rectypes examples.ml monalg_tests.ml
 

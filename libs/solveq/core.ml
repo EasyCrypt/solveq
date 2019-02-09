@@ -33,7 +33,8 @@ module Opt     = BatOption
 module Hashtbl = BatHashtbl
 module IO      = BatIO
 module Big_int = BatBig_int
-
+module File = BatFile
+  
 (* -------------------------------------------------------------------- *)
 module List : sig
   include module type of BatList

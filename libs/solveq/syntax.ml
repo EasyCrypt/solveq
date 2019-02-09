@@ -9,6 +9,8 @@ type perror =
 
 exception ParseError of Location.t option * perror
 
+exception LexError of Location.t option * perror
+                      
 (* -------------------------------------------------------------------- *)
 type pident = string loced
 
