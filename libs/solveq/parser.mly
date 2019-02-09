@@ -8,7 +8,7 @@
 %token <Big_int.big_int> INT
 %token <string> IDENT
 
-%token CHECK
+%token ISUNIF
 %token COMMA
 %token EOF
 %token HAT
@@ -43,15 +43,15 @@ entry:
 (* -------------------------------------------------------------------- *)
 entry_r:
 | v=var_decl { PVarDecl v }
-| t=check    { PCheck   t }
+| t=isunif    { PIsUnif t }
 
 (* -------------------------------------------------------------------- *)
 var_decl:
 | VAR xs=seq0(ident) { xs }
 
 (* -------------------------------------------------------------------- *)
-check:
-| CHECK t=term { t }
+isunif:
+| ISUNIF xs=tuple0(term) { xs }
 
 (* -------------------------------------------------------------------- *)
 %inline ident:
@@ -122,6 +122,7 @@ literal_r:
 (* -------------------------------------------------------------------- *)
 %inline tuple0(X):
 | xs=parens(plist0(X, COMMA)) { xs }
+| xs = X { [xs] }
 
 (* -------------------------------------------------------------------- *)
 %inline seq0(X):

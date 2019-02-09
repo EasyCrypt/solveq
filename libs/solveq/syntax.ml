@@ -33,12 +33,12 @@ and pliteral = pliteral_r loced
 
 (* -------------------------------------------------------------------- *)
 type pvardecl = pident list
-type pcheck   = pterm
+type pisunif   = pterm list
 
 (* -------------------------------------------------------------------- *)
 type pentry_r =
   | PVarDecl of pvardecl
-  | PCheck   of pcheck
+  | PIsUnif   of pisunif
 
 and pentry = pentry_r loced
 
