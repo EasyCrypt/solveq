@@ -12,43 +12,53 @@ open GroebnerBasis
 open Core
 
 
-let mon_pp = X.pp Format.pp_print_string;;
+let var_pp = Var.pp;;
+let mon_pp = X.pp Var.pp;;
 let bi_pp fmt bi = Format.pp_print_int fmt  (Big_int.int_of_big_int bi);;
-let r_pp = R.pp bi_pp;;
 let b_pp = B.pp bi_pp;;
+let r_pp = R.pp bi_pp;;
 let s_pp = S.pp mon_pp r_pp;;
+let p_pp = P.pp s_pp s_pp;;
 let sb_pp = SB.pp mon_pp b_pp;;
+#install_printer var_pp;;
 #install_printer s_pp;;
-#install_printer b_pp;;
-#install_printer sb_pp;;
 #install_printer p_pp;;
 #install_printer r_pp;;
 #install_printer bi_pp;;
+#install_printer sb_pp;;
 #install_printer mon_pp;;
 
+let [v1;v2;v3;v4;v5;v6] = List.map (fun v-> Var.make_det (Var.of_int v)) [1;2;3;4;5;6];;
 
-let g = Add(Var 1,Var 2);;
+let g = Add(Var v1,Var v2);;
 
-compute_inv 1 g;;
+compute_inv v1 g;;
 
-
-let g2 = Add(Var 1,Opp(Var 2));;
-
-compute_inv 1 g2;;
+module C = Converter(R)(S)
+  module Inv = InvertMonalg(R)(S)
 
 
-let pol = AddR( MultR(VarR 1,VarR 2),VarR 3  );;
+let g2 = Add(Var v1,Opp(Var v2));;
 
-compute_inv_ring 1 pol;;
+compute_inv v1 g2;;
 
-let pol2 = AddR( MultR(VarR 1,VarR 2), MultR(OppR(VarR 3),VarR 1));;
-let pol3 = AddR(VarR 3,pol2);;
 
-compute_inv_ring 1 pol3;;
 
-let pol4 = AddR(VarR 1,VarR 3  );;
+let pol = AddR( MultR(VarR v1,VarR v2),VarR v3  );;
 
-compute_inv_ring 1 pol4;;
+let test = C.ring_to_monalg pol;;
+
+
+compute_inv_ring v2 pol;;
+
+let pol2 = AddR( MultR(VarR v1,VarR v2), MultR(OppR(VarR v3),VarR v1));;
+let pol3 = AddR(VarR v3,pol2);;
+
+compute_inv_ring v1 pol3;;
+
+let pol4 = AddR(VarR v1,VarR v3  );;
+
+compute_inv_ring v1 pol4;;
 
 
 (* Trying to invert (u,v,w,x,y,z) -> (w,v,x-vu,u, y-uw,z-wv) 
@@ -56,43 +66,43 @@ compute_inv_ring 1 pol4;;
  the inverse should be (1,2,3,4,5,6) -> (4,2,1,3-24,5-43)
 *)
 
-
-let vars = [1;2;3;4;5;6];;
-let pols = [VarR 1;
-            VarR 2;
-            VarR 3;
-            AddR(VarR 4,MultR(VarR 2,VarR 1));
-            AddR(VarR 5,MultR(VarR 1,VarR 3));
-            AddR(VarR 6,OppR(MultR(VarR 3,VarR 2)))
+let vars = [v1;v2;v3;v4;v5;v6];;
+let pols = [VarR v1;
+            VarR v2;
+            VarR v3;
+            AddR(VarR v4,MultR(VarR v2,VarR v1));
+            AddR(VarR v5,MultR(VarR v1,VarR v3));
+            AddR(VarR v6,OppR(MultR(VarR v3,VarR v2)))
            ];;  
-
 
 compute_inv_ring_tuple vars pols;;
 (* very similar to cramer shoup *)
 
-let vars2 = [11;12;13;14;15;16];;
-let pols2 = [VarR 13;
-            VarR 12;
-            AddR(VarR 14,MultR(VarR 12,VarR 11));
-            VarR 11;
-            AddR(VarR 15,MultR(VarR 11,VarR 13));
-            AddR(VarR 16,OppR(MultR(VarR 13,VarR 12)))
+let [v11;v12;v13;v14;v15;v16] = List.map (fun v-> Var.make_det (Var.of_int v)) [11;12;13;14;15;16];;
+
+let vars2 = [v11;v12;v13;v14;v15;v16];;
+let pols2 = [VarR v13;
+            VarR v12;
+            AddR(VarR v14,MultR(VarR v12,VarR v11));
+            VarR v11;
+            AddR(VarR v15,MultR(VarR v11,VarR v13));
+            AddR(VarR v16,OppR(MultR(VarR v13,VarR v12)))
            ];;  
 
 
 compute_inv_ring_tuple vars2 pols2;;
 
-let vars3 = [1;2;3];;
-let pols3 = [VarR 1;
-            VarR 2;
-            MultR(VarR 3,VarR 2);
+let vars3 = [v1;v2;v3];;
+let pols3 = [VarR v1;
+            VarR v2;
+            MultR(VarR v3,VarR v2);
            ];;  
 
 compute_inv_ring_tuple vars3 pols3;; (* should return None *)
 
-let pols4 = [VarR 1;
-            AddR(VarR 2,MultR(VarR 1,VarR 3));
-            AddR(VarR 3,OppR(AddR(VarR 2,MultR(VarR 1,VarR 3))));
+let pols4 = [VarR v1;
+            AddR(VarR v2,MultR(VarR v1,VarR v3));
+            AddR(VarR v3,OppR(AddR(VarR v2,MultR(VarR v1,VarR v3))));
             ];;  (*x, y +xz, z-y-xz*)
 
 compute_inv_ring_tuple vars3 pols4;; (* correct inverse: x, -xz -xy + y   ,y+z *)

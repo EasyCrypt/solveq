@@ -1,17 +1,60 @@
 open Core
 
-type var = int
-             
-module IntV : Monalg.Var with type t = var = struct
-  type t = var
-             
-  let eq a b = a == b
-      
-  let  compare a b = a - b
-      
-end 
+type var = {
+  id : int;
+  name: string;
+  priority:int;
+}
 
-module IntVSet = Set.Make(IntV)
+module Var = struct
+  type t = var
+
+  let fresh_priority = 0
+  let det_priority = 1
+  let rnd_priority =2
+    
+  let id = ref 0 
+
+  let of_string s =
+    let p = { id = !id; name = s; priority=0 } in
+    incr id;
+    p 
+
+  let of_int s =
+    let p = { id = !id; name = (string_of_int s); priority=0 } in
+    incr id;
+    p
+
+  let to_string v = v.name
+
+  let to_int v = int_of_string v.name
+    
+  let eq v1 v2 = v1.id == v2.id  (* we only compare ids, the rest should not influence equality *)
+
+  let compare v1 v2 =
+    if v1.id = v2.id then
+      0
+    else if v1.priority = v2.priority then
+      v1.id - v2.id
+    else
+      v1.priority - v2.priority
+
+  let make_rnd v =
+    {v with priority = rnd_priority}
+
+  let make_det v =
+    {v with priority = det_priority}
+  
+  let make_fresh v =
+    {v with priority = fresh_priority}
+
+  let pp format v =
+    Format.pp_print_string format v.name
+ 
+end
+
+module VarSet = Set.Make(Var) 
+module VarMap = Map.Make(Var) 
     
 type group = 
   | Zero
@@ -33,20 +76,7 @@ module R = Monalg.IntField
 
 module B = Monalg.BoolField
 
-type pvar = String.t
-             
-module V : Monalg.Var with type t = pvar = struct
-  type t = String.t
-             
-  let eq a b = String.equal a b
-      
-  let  compare a b = String.compare a b
-      
-end 
-
-module VSet = Set.Make(V)
-
-module X = Monalg.Multinom(V)  (* the monomials over variables *)
+module X = Monalg.Multinom(Var)  (* the monomials over variables *)
     
 module S = Monalg.MonAlg(X)(R) (* polynomials over intfield *)
 
@@ -58,21 +88,16 @@ module PB = Monalg.ProdAlg(SB)(SB)
 
 exception NoInv
 
-(* We define a canonical mapping between ring variables (int) and monalg variables (string), mapping variables i to either "xi" for deterministic variable or "zi" for random variables *)
-let pvar_of_var ?(pref="x") (x:var) : pvar =
-  (String.concat "" [pref;Int.to_string x])
 
-let var_of_pvar (x:pvar) : var =
-  Int.of_string (String.sub x 1 ((String.length x)-1))
       
 module Converter(R : Monalg.Ring)(S : Monalg.MonAlgebra with type ring = R.t and type mon = X.t) : sig
-  val ring_to_monalg : ?rndvars:IntVSet.t -> ring -> S.t
+  val ring_to_monalg : ?rndvars:VarSet.t -> ring -> S.t
   val monalg_to_ring : S.t -> ring
-  val varset : S.t -> Set.Make(V).t
+  val varset : S.t -> VarSet.t
 
 end =
 struct
-  let rec ring_to_monalg ?(rndvars=IntVSet.empty) (r:ring) =
+  let rec ring_to_monalg ?(rndvars=VarSet.empty) (r:ring) =
     match r with
     | ZeroR -> S.zero
     | UnitR -> S.unit
@@ -80,17 +105,10 @@ struct
     | AddR (r1,r2) -> S.(+!) (ring_to_monalg r1) (ring_to_monalg r2)
     | MultR (r1,r2)-> S.( *! ) (ring_to_monalg r1) (ring_to_monalg r2)
     | InvR r1 -> raise NoInv
-    | VarR x -> let pvar = if IntVSet.mem x rndvars then pvar_of_var ~pref:"z" x else pvar_of_var x in
+    | VarR x -> let pvar = if VarSet.mem x rndvars then Var.make_rnd x else Var.make_det x in
       S.form (R.unit) (X.ofvar pvar)
 
-  let invert_pvar map pvar =
-    let i = var_of_pvar pvar in
-    if String.get pvar 0 = 'f' then
-      map.(i)
-    else
-      VarR i
 
-  module VMap = Map.Make(V)
 
   let rec var_to_ring (var:ring) (pow:int)=
     if pow<0 then
@@ -104,8 +122,8 @@ struct
 
   let rec monom_to_ring   x =
     let map = X.tomap x in
-    VMap.fold (fun kn dn a ->
-        let var = VarR (var_of_pvar kn) in 
+    VarMap.fold (fun kn dn a ->
+        let var = VarR (kn) in 
         match a with
         |UnitR -> var_to_ring var dn
         |_ ->  MultR((var_to_ring var dn),a)) map UnitR
@@ -136,11 +154,10 @@ struct
 
   let varset (p:S.t) =
     let module M = Map.Make(X) in
-    let module Se = Set.Make(V) in
     let rec acc (q:S.t) =
       match (S.split q) with
-      | None -> Se.empty
-      | Some((x,m),r) -> Se.union (X.varset x) (acc r) in
+      | None -> VarSet.empty
+      | Some((x,m),r) -> VarSet.union (X.varset x) (acc r) in
     acc p   
 end
 

@@ -7,7 +7,7 @@ open Num.TaggedInfix
 open Monalg
 open Types
      
-module Y = Set.Make(V)         (* the set of private variables *)
+module VarSet = Set.Make(Var)         (* the set of private variables *)
 
 exception ReduceFailure
 
@@ -19,9 +19,9 @@ exception ReduceFailure
     
 module ProdGB(R : Field)(S : Monalg.MonAlgebra with type ring = R.t and type mon = X.t)(P : Monalg.ProductAlgebra with type ringA = S.t and type ringB = S.t) :
 sig
-  val groebner : Set.Make(V).t -> P.t list -> P.t list
-  val deduc : Y.t -> P.t list -> P.t -> S.t option
-  val syz : Y.t -> P.t list -> S.t list
+  val groebner : Set.Make(Var).t -> P.t list -> P.t list
+  val deduc : VarSet.t -> P.t list -> P.t -> S.t option
+  val syz : VarSet.t -> P.t list -> S.t list
 
 end = struct
   let is_zero ((p, q) : P.t) : bool =
@@ -31,7 +31,7 @@ end = struct
   (* Reduce monomial cm by polynomial pol, returning replacement for cm.       *)
   (* ------------------------------------------------------------------------- *)
 
-  let reduce1 (priv : Y.t) ((m, c) : X.t * R.t) ((p, q) : P.t) =
+  let reduce1 (priv : VarSet.t) ((m, c) : X.t * R.t) ((p, q) : P.t) =
     match (S.split p) with
     | None -> None
     | Some(((m2, c2), remainder)) -> 
@@ -143,8 +143,8 @@ end
 (* ------------------------------------------------------------------------- *)
 module GB(R : Field)(S : Monalg.MonAlgebra with type ring = R.t and type mon = X.t) :
 sig
-  val groebner : Set.Make(V).t -> S.t list -> S.t list
-  val deduc : Y.t -> S.t list -> S.t -> S.t option
+  val groebner : Set.Make(Var).t -> S.t list -> S.t list
+  val deduc : VarSet.t -> S.t list -> S.t -> S.t option
 end = struct
 
   let is_zero (p:S.t) : bool =
@@ -154,7 +154,7 @@ end = struct
   (* Reduce monomial cm by polynomial pol, returning replacement for cm.       *)
   (* ------------------------------------------------------------------------- *)
 
-  let reduce1 (priv : Y.t) ((m, c) : X.t * R.t) (p: S.t) =
+  let reduce1 (priv : VarSet.t) ((m, c) : X.t * R.t) (p: S.t) =
     match (S.split p) with
     | None -> None
     | Some(((m2, c2), remainder)) -> 

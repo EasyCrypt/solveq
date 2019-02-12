@@ -12,13 +12,15 @@ open Types
 open Core
 open Interference
 
-let mon_pp = X.pp Format.pp_print_string;;
+let var_pp = Var.pp;;
+let mon_pp = X.pp Var.pp;;
 let bi_pp fmt bi = Format.pp_print_int fmt  (Big_int.int_of_big_int bi);;
 let b_pp = B.pp bi_pp;;
 let r_pp = R.pp bi_pp;;
 let s_pp = S.pp mon_pp r_pp;;
 let p_pp = P.pp s_pp s_pp;;
 let sb_pp = SB.pp mon_pp b_pp;;
+#install_printer var_pp;;
 #install_printer s_pp;;
 #install_printer p_pp;;
 #install_printer r_pp;;
@@ -33,12 +35,11 @@ let sb_pp = SB.pp mon_pp b_pp;;
 (* ------------------------------------------------------------------------- *)
 
 module GB = GroebnerBasis.ProdGB(R)(S)(P)
+module VarSet = Set.Make(Var)
 
-let x = "x" and y = "y" and z =  "z";;
+let x = Var.of_string "x" and y = Var.of_string "y" and z =  Var.of_string "z";;
 
-let priv = GroebnerBasis.Y.empty;; (* only z is fully known, and only g^x and g^y are known *)
-let priv = GroebnerBasis.Y.add x priv;;
-let priv = GroebnerBasis.Y.add y priv;;
+let priv = VarSet.of_list [x;y];;
 
 let m1 = X.ofvar x ;; (* x *)
 let m2 = X.ofvar y;; (* y *)
@@ -48,8 +49,11 @@ let m5 = X.( *@ ) m2 m3;; (* yz *)
 let m6 = X.( *@ ) m1 m1;; (* xx *)
 
 S.form R.unit m2;;
-let p1 = S.( +! ) (S.form R.unit m4) (S.form R.unit m2) and sp1 = S.form R.unit (X.ofvar "sp1");; (* xy+y *)
-let p2 =  (S.form R.unit m4) and sp2 = S.form R.unit (X.ofvar "sp2");; (* xy *)
+
+let vp1 = Var.of_string "sp1" and vp2=Var.of_string "sp2";;
+
+let p1 = S.( +! ) (S.form R.unit m4) (S.form R.unit m2) and sp1 = S.form R.unit (X.ofvar vp1);; (* xy+y *)
+let p2 =  (S.form R.unit m4) and sp2 = S.form R.unit (X.ofvar vp2);; (* xy *)
 
 let py = (S.form R.unit m2);;
 
@@ -79,21 +83,22 @@ let bpy = SB.form B.unit m2;;
 
 let null = SB.( +!) bpy bpy;;
 
-let bp1 = SB.( +! ) (SB.form B.unit m4) (bpy) and bsp1 = SB.form B.unit (X.ofvar "sp1");; (* xy+y *)
+let bp1 = SB.( +! ) (SB.form B.unit m4) (bpy) and bsp1 = SB.form B.unit (X.ofvar vp1);; (* xy+y *)
 
-let bp2 =  (SB.form B.unit m4) and bsp2 = SB.form B.unit (X.ofvar "sp2");; (* xy *)
+let bp2 =  (SB.form B.unit m4) and bsp2 = SB.form B.unit (X.ofvar vp2);; (* xy *)
 
 let py = SB.( +!) bp1 bp2;; (* xy+y+xy = y *)
 
 (* indep examples *)
+let x = Var.make_det (Var.of_string "x") and y = Var.make_det (Var.of_string "y") and r = Var.make_rnd ( Var.of_string "r");;
+
+x.priority;;
+r.priority;;
 
 
 
-let x = "x" and y = "y" and r =  "z";;
-
-let rnd = GroebnerBasis.Y.empty;; (* only z is fully known, and only g^x and g^y are known *)
-let rnd = GroebnerBasis.Y.add r rnd;;
-let det = GroebnerBasis.Y.of_list [x;y];;
+let rnd = VarSet.of_list [r];;
+let det = VarSet.of_list [x;y];;
 let m1 = X.ofvar x ;; (* x *)
 let m2 = X.ofvar y;; (* y *)
 let m3 = X.ofvar r;; (* z *)
@@ -104,9 +109,9 @@ let p3 = (S.form R.unit m1);;
 module Dep = Interference.Dependencies(R)(S)(P);;
 module GB = GroebnerBasis.GB(R)(S);;
 module C = Converter(R)(S);;
-module Se = Set.Make(V);;
-module SSe = Set.Make(Se);;
-    module M = Map.Make(V);;
+module VarSet = Set.Make(Var);;
+module VatSetSet = Set.Make(VarSet);;
+    module M = Map.Make(Var);;
 
 let basis1 = (Dep.get_dependencies [p1;p2] det rnd);; (* (x+r,y+r) is dependent from both x and y *)
 
@@ -116,18 +121,17 @@ let basis2 =(Dep.get_dependencies [p2;p3] det rnd);; (* (y+r,x) is only dependen
 
 module Unif = Uniform.Unif(R)(S)(P);;
 
-let s1 = Se.of_list [y];;
-let s2 = Se.of_list [x;z];;
+let s1 = VarSet.of_list [y];;
+let s2 = VarSet.of_list [x;z];;
 
 
 let subsets = Unif.all_sub_sets [s1;s2];;
 
-List.map (Se.to_list) (Unif.SSe.to_list subsets);;
+List.map (VarSet.to_list) (Unif.VarSetSet.to_list subsets);;
 
-let x = "x" and y = "y" and r1 =  "r1" and r2 = "r2";;
+let x = Var.make_det (Var.of_string "x") and y = Var.make_det (Var.of_string "y") and r1 = Var.make_rnd ( Var.of_string "r1") and r2 = Var.make_rnd ( Var.of_string "r2") ;;
 
-
-let rndvars = Se.of_list [r1;r2];;
+let rndvars = VarSet.of_list [r1;r2];;
 
 let m1 = X.ofvar x ;; (* x *)
 let m2 = X.ofvar y;; (* y *)
@@ -148,6 +152,9 @@ Unif.naive_is_unif [p1;p3] rndvars;; (* false *)
 
 let x0 = "x0" and x1 = "x1" and y0 = "y0" and y1 = "y1" and r0 =  "zr0" and r1 = "zr1";;
 
+let x0 = Var.make_det (Var.of_string "x0") and x1 = Var.make_det (Var.of_string "x1") and y0 = Var.make_det (Var.of_string "y0") and y1 = Var.make_det (Var.of_string "y1") and r0 = Var.make_rnd ( Var.of_string "r0") and r1 = Var.make_rnd ( Var.of_string "r1") ;;
+
+
 let mx0 = S.form R.unit (X.ofvar x0) ;;
 let mx1 = S.form R.unit (X.ofvar x1);;
 let my0 = S.form R.unit (X.ofvar y0);;
@@ -157,8 +164,8 @@ let mr1 = S.form R.unit (X.ofvar r1);;
 
 
 
-let rndvars = Se.of_list [r0;r1];;
-let detvars = Se.of_list [x0;x1;y0;y1];;
+let rndvars = VarSet.of_list [r0;r1];;
+let detvars = VarSet.of_list [x0;x1;y0;y1];;
 
 let p1 = S.( +! ) mr0 (S. ( *! ) mx0 my1 );; (* r0 + x0y1 *)
 let p2 = S.( +! ) mr0 (S. ( *! ) mx1 my0 );; (* r0 + x1y0 *)
