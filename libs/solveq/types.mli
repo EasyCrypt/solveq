@@ -12,6 +12,7 @@ module Var : sig
   type t = var
   val of_string : string -> var
   val of_int : int -> var
+  val of_id : int -> var
   val to_string : var -> string
   val to_int : var -> int
   val eq : var -> var -> bool

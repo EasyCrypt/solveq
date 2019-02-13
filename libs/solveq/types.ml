@@ -16,15 +16,19 @@ module Var = struct
   let id = ref 0 
 
   let of_string s =
-    let p = { id = !id; name = s; priority=0 } in
+    let p = { id = !id; name = s; priority=det_priority } in
     incr id;
     p 
 
   let of_int s =
-    let p = { id = !id; name = (string_of_int s); priority=0 } in
+    let p = { id = !id; name = (string_of_int s); priority=det_priority } in
     incr id;
     p
 
+  let of_id i =
+    let p = { id = i; name = (string_of_int i); priority=det_priority } in
+    p
+    
   let to_string v = v.name
 
   let to_int v = int_of_string v.name
