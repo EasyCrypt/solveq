@@ -1,2 +1,3 @@
 var x y
-isunif (x+r+y,t)
+isunif (x+r+y,x+r+t)
+invert (r) (x+r+y)

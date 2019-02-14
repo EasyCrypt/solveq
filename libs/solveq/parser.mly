@@ -9,6 +9,7 @@
 %token <string> IDENT
 
 %token ISUNIF
+%token INVERT
 %token COMMA
 %token EOF
 %token HAT
@@ -44,7 +45,7 @@ entry:
 entry_r:
 | v=var_decl { PVarDecl v }
 | t=isunif    { PIsUnif t }
-
+| vts=invert    { PInvert vts }
 (* -------------------------------------------------------------------- *)
 var_decl:
 | VAR xs=seq0(ident) { xs }
@@ -52,6 +53,10 @@ var_decl:
 (* -------------------------------------------------------------------- *)
 isunif:
 | ISUNIF xs=tuple0(term) { xs }
+
+(* -------------------------------------------------------------------- *)
+invert:
+| INVERT vs=tuple0(ident) xs=tuple0(term) { (vs,xs) }
 
 (* -------------------------------------------------------------------- *)
 %inline ident:

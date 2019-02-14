@@ -34,12 +34,14 @@ and pliteral = pliteral_r loced
 (* -------------------------------------------------------------------- *)
 type pvardecl = pident list
 type pisunif   = pterm list
+type pinvert   = pident list * pterm list
 
 (* -------------------------------------------------------------------- *)
 type pentry_r =
   | PVarDecl of pvardecl
   | PIsUnif   of pisunif
-
+  | PInvert   of pinvert
+      
 and pentry = pentry_r loced
 
 (* -------------------------------------------------------------------- *)
