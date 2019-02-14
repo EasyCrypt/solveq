@@ -31,6 +31,9 @@ main:
 examples: lib
 	cd tests && ocaml -rectypes examples.ml monalg_tests.ml
 
+tests: main
+	./main.native tests/test_ok.solveq
+
 install: lib
 	ocamlfind install solveq META \
 	  _build/libs/solveq.cmo \

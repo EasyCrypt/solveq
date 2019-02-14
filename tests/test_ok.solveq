@@ -1,0 +1,7 @@
+invert (v1,v2,v3,v4,v5,v6) (v1,v2,v3,v4+v2*v1,v5+v1*v3,v6+v3*v2)
+
+invert (x,y,z) (x,y+x*z,z+y+x*z)
+
+var x y z
+
+isunif (x+r,y*x+r+t)
