@@ -5,7 +5,7 @@ open Core
 type var = {
   id : int;
   name: string;
-  priority:int;   (* used to specify that some variables are greater than others *)
+  mutable priority:int;   (* used to specify that some variables are greater than others *)
 }
 
 module Var : sig
@@ -39,6 +39,8 @@ type ring =
   | InvR of ring
   | VarR of var
 
+val pp_ring : Core.Format.formatter -> ring -> unit
+  
 exception NoInv
 
 (* Types for polynoms in normal form over IntField *)

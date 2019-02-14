@@ -3,9 +3,9 @@ open Io
 open Location
 open Types
     
-module Se=Set.Make(V)
+module Se=Set.Make(Var)
 
-let mon_pp = X.pp Format.pp_print_string;;
+let mon_pp = X.pp Var.pp;;
 let bi_pp fmt bi = Format.pp_print_int fmt  (Big_int.int_of_big_int bi);;
 let b_pp = B.pp bi_pp;;
 let r_pp = R.pp bi_pp;;
@@ -31,10 +31,12 @@ let lit_to_ring (i : Syntax.pliteral_r) : ring =
   |PL_Int j when j = Big_int.zero -> ZeroR
   |PL_Int j when j = Big_int.unit_big_int -> UnitR
   | _ -> raise ExprNotSupported
-    
+
+
 let converter (p : Syntax.pterm_r) : ring =
   match p with
   |PLit i -> lit_to_ring (Location.unloc i)
+  |PVar v -> Var.of_string (Location.unloc v)
   |_ -> raise ExprNotSupported
        
 let run filename =

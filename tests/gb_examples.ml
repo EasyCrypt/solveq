@@ -180,5 +180,28 @@ let p3 = S.( +! ) mr0 (S.( +! ) mr1 mx0);;
 Dep.check_indep [p1;p2] detvars rndvars;; (* x0 and y0 are bound, x1 and y1 are independent *)
 Dep.check_indep [p1;p2;p3] detvars rndvars;; (* x0 and y0 are bound, x1 and y1 are independent *)
 
+let p1 = mx0;;
+let p2 = my0;;
+let p3 = S.( +!) ( S.( *! ) mx0 my1 ) mr0;;
+
+Dep.check_indep [p1;p2;p3] detvars rndvars;;
 
 let basis1 = (Dep.get_dependencies [p1;p2] detvars rndvars);;
+
+
+
+let x = Var.make_det (Var.of_string "x") and y = Var.make_det (Var.of_string "y") and r1 = Var.make_det ( Var.of_string "r1") and r0 = Var.make_det ( Var.of_string "r0") ;;
+
+let rlist = [VarR(x0);VarR(y0); AddR(MultR(VarR(x0),VarR(y1)),VarR(r0)) ];;
+let rndvars = VarSet.of_list [r0;r1];;
+VarSet.exists (fun r -> Var.eq r0 r) rndvars;;
+if VarSet.exists (fun r -> Var.eq r0 r) rndvars then Var.make_rnd r0 else r0;;
+
+let pols =  List.map (C.ring_to_monalg ~rndvars:(rndvars)) rlist;;
+
+
+let detvars = VarSet.of_list [x0;x1;y0;y1];;
+
+
+Interference.check_indep_ring rlist detvars rndvars;;
+Interference.check_indep_ringbool rlist detvars rndvars;;
