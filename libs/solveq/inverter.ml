@@ -7,7 +7,6 @@ module VarSet = Set.Make(Var) (* an empty set *)
     
 
 module InvertMonalg(R : Field)(S : Monalg.MonAlgebra with type ring = R.t and type mon = X.t) : sig
-  val split_pol : var -> S.t -> S.t * S.t
   val euclidian_div : var -> S.t -> S.t * S.t
   val inverter_tuple : var list -> S.t list -> S.t list
 end = struct
@@ -60,7 +59,6 @@ end = struct
       ) [] pols in 
     
     let basis =  GB.groebner VarSet.empty ps in
-    List.iter (fun v -> Format.printf "basis %a@." S.pp v) (basis);
     let inverters = List.map  (
         fun e->  match (GB.deduc VarSet.empty basis (S.form R.unit (X.ofvar (e)))) with
           |None -> raise NoInv
@@ -71,13 +69,9 @@ end = struct
 
     (* must check in deduc if the reduced form contains only -t elements *)
     let private_vars = (VarSet.of_list vars) in (* we thus define every variables as private, not know to the adversary *)
-    Format.printf "START map@.";
     List.map (fun poly ->
           let module M = Map.Make(X) in
           let varset = C.varset poly in
-          List.iter (fun v -> Format.printf "var %a@." Var.pp v) (VarSet.to_list varset);
-          List.iter (fun v -> Format.printf "priv %a@." Var.pp v) (VarSet.to_list private_vars);
-          Format.printf "inv %a@." S.pp poly;
           if VarSet.is_empty (VarSet.inter varset private_vars) then (S.(~!) poly)
               else raise NoInv ) inverters
 

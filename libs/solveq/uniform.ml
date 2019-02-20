@@ -33,11 +33,10 @@ struct
 
   let set_pols_rnd pols rndvars =
     let vars = List.fold_left (fun acc p -> VarSet.union (C.varset p) acc ) VarSet.empty pols in
-    List.iter (fun p -> Format.printf "servar = %a@." Var.pp p) (VarSet.to_list vars);
     let detvars = VarSet.diff vars rndvars in
-    List.iter (fun p -> Format.printf "serdetvar = %a@." Var.pp p) (VarSet.to_list detvars);           
     VarSet.iter (fun v -> Var.make_rnd v;()) rndvars;
     VarSet.iter (fun v -> Var.make_det v;()) detvars;
+    (* here, we need to kind of reload the polynomials, or their order is not updated... *)
     let pols = List.map (fun p -> S.( *! ) (S.unit) p) pols in
     pols,rndvars
 
@@ -56,11 +55,7 @@ struct
           (* we change the status of the different variables to concord with the current subset *)
           try
             let newpols,newrndvars = set_pols_rnd pols p in
-            List.iter (fun p -> Format.printf "p = %a@." Var.pp p) (VarSet.to_list p);
-            List.iter (fun p -> Format.printf "pol = %a@." S.pp p) newpols;
             let inverters = I.inverter_tuple (VarSet.to_list p) newpols in
-
-            List.iter (fun p -> Format.printf "inv = %a@." S.pp p) inverters;
             (* we reset the status of the variables *)
             VarSet.iter (fun v -> Var.make_rnd v; ()) rndvars;             
             true
