@@ -10,6 +10,8 @@ module type Monoid = sig
 
   include Ord.Eq   with type t := t
   include Ord.Comp with type t := t
+
+  val pp : t Format.pp
 end
 
 (* -------------------------------------------------------------------- *)
@@ -25,6 +27,8 @@ module type Ring = sig
   val ( *! ) : t -> t -> t
   include Ord.Eq   with type t := t
   include Ord.Comp with type t := t
+
+  val pp : t Format.pp
 
 end
 
@@ -43,6 +47,9 @@ module IntRing : Ring with type t = Big_int.big_int = struct
 
   let eq = Big_int.eq_big_int
   let compare = Big_int.compare_big_int
+
+  let pp fmt bi = Format.fprintf fmt "%s" (Big_int.to_string bi)
+
 end
 
 (* -------------------------------------------------------------------- *)
@@ -75,8 +82,6 @@ end
 (* -------------------------------------------------------------------- *)
 module FiniteField(M : Modulo) : sig
   include Field with type t = Big_int.big_int
-
-  val pp : Big_int.big_int Format.pp -> t Format.pp
              
 end = struct
   type t = Big_int.big_int
@@ -95,8 +100,8 @@ end = struct
 
   let lcm = fun x y -> if eq (M.modulo x) unit && eq (M.modulo y) unit then unit else zero
 
-   let pp (ppx : Big_int.big_int Format.pp) (fmt : Format.formatter) (p : t) =
-      Format.fprintf fmt "%a" ppx p
+  let pp = IntRing.pp 
+
 end
 
 module BoolField = FiniteField(BoolMod)
@@ -104,7 +109,6 @@ module BoolField = FiniteField(BoolMod)
 module IntField : sig
   include  Field with type t = Big_int.big_int * Big_int.big_int 
 
-  val pp : Big_int.big_int Format.pp -> t Format.pp
 end = struct
 
   type v = Big_int.big_int
@@ -154,46 +158,11 @@ end = struct
                                                 || ((beq p1 ((~?) p2)) && beq  q1 ((~?) q2) )
   let compare ((p1, q1) : t) ((p2, q2) : t) : int = bcompare ( ( *? ) p1 q2) ( ( *? ) q1 p2)
 
-  let pp (ppx : Big_int.big_int Format.pp) (fmt : Format.formatter) ((p, q) : t) =
-      Format.fprintf fmt "(%a/%a)" ppx p ppx q
+  let pp (fmt : Format.formatter) ((p, q) : t) =
+    let ppx = IntRing.pp in
+    Format.fprintf fmt "(%a/%a)" ppx p ppx q
 
 
-end
-
-(* -------------------------------------------------------------------- *)
-module Monom : sig
-  include Monoid
-
-  val ofnat : int -> t
-  val tonat : t -> int
-
-  val pp : string -> t Format.pp
-end = struct
-  type t = Monom of int
-
-  let ofnat (x : int) : t =
-    Monom (max x 0)
-
-  let tonat (Monom m) : int =
-    m
-
-  let unit : t =
-    Monom 0
-
-  let ( *@ ) (Monom m1) (Monom m2) : t =
-    Monom (m1 + m2)
-
-  let eq =
-    ((=) : t -> t -> bool)
-
-  let compare =
-    (Pervasives.compare : t -> t -> int)
-
-  let pp (x : string) (fmt : Format.formatter) (Monom m) =
-    match m with
-    | _ when m <= 0 -> ()
-    | 1 -> Format.pp_print_string fmt x
-    | _ -> Format.fprintf fmt "%s^%d" x m
 end
 
 (* -------------------------------------------------------------------- *)
@@ -202,6 +171,8 @@ module type Var = sig
 
   include Ord.Eq   with type t := t
   include Ord.Comp with type t := t
+  
+  val pp : t Format.pp
 end
 
 (* -------------------------------------------------------------------- *)
@@ -217,7 +188,6 @@ module Multinom(X : Var)  : sig
   val ( */ )  :  Set.Make(X).t -> t -> t -> t
   val lcm : t -> t -> t
   val compare : t -> t -> int
-  val pp : X.t Format.pp -> t Format.pp
 end = struct
   module M = Map.Make(X)
   module S = Set.Make(X)
@@ -297,7 +267,8 @@ end = struct
   )
     (* correspond to the lexicographic order on multinoms 
                                            *)
-  let pp (ppx : X.t Format.pp) (fmt : Format.formatter) (m : t) =
+  let pp (fmt : Format.formatter) (m : t) =
+    let ppx = X.pp in
     let ppcx fmt (x, c) =
       if   c = 1
       then Format.fprintf fmt "%a" ppx x
@@ -307,35 +278,6 @@ end = struct
       ppcx fmt (List.rev (M.bindings m))
 end
 
-(* -------------------------------------------------------------------- *)
-module Seqnom(X : Var) : sig
-  include Monoid
-
-  val oflist : X.t list -> t
-  val tolist : t -> X.t list
-
-  val pp : X.t Format.pp -> t Format.pp
-end = struct
-  type t = X.t list
-
-  let oflist (m : X.t list) : t = m
-  let tolist (m : t) : X.t list = m
-
-  let unit : t =
-    []
-
-  let ( *@ ) (m1 : t) (m2 : t) : t =
-    m1 @ m2
-
-  let eq (m1 : t) (m2 : t) =
-    List.eq X.eq m1 m2
-
-  let compare (m1 : t) (m2 : t) =
-    List.compare X.compare m1 m2
-
-  let pp (ppx : X.t Format.pp) (fmt : Format.formatter) (m : t) =
-    Format.pp_print_list ~pp_sep:(fun _ () -> ()) ppx fmt m
-end
 
 (* -------------------------------------------------------------------- *)
 module type MonAlgebra = sig
@@ -347,8 +289,6 @@ module type MonAlgebra = sig
   val form : ring -> mon -> t
 
   val split : t -> ((mon * ring) * t) option  (* return the leading monomial and the remainder *)
-
-  val pp : mon Format.pp -> ring Format.pp -> t Format.pp
 
   end
 
@@ -416,7 +356,9 @@ module MonAlg(X : Monoid)(R : Ring) : sig
   let compare (p : t) (q : t) : int =
     M.compare R.compare p q
 
-  let pp (ppx : X.t Format.pp) (ppc : R.t Format.pp) fmt p =
+  let pp fmt p =
+    let ppx = X.pp in
+    let ppc = R.pp in
     let pp_form fmt (f, c) =
       if   R.eq c R.unit
       then ppx fmt f
@@ -433,7 +375,7 @@ module type ProductAlgebra = sig
   type ringB
   type t = ringA * ringB
 
- include Ring with type t := t 
+  include Ring with type t := t 
 
   val pi1 : t -> ringA
   val pi2 : t -> ringB
@@ -441,7 +383,6 @@ module type ProductAlgebra = sig
   val i1 : ringA -> t
   val i2 : ringB -> t
 
-  val pp : ringA Format.pp -> ringB Format.pp -> t Format.pp
 end
 
 module ProdAlg(A : Ring)(B : Ring) : ProductAlgebra with type ringA = A.t and type ringB = B.t = struct
@@ -483,8 +424,8 @@ module ProdAlg(A : Ring)(B : Ring) : ProductAlgebra with type ringA = A.t and ty
     let x = A.compare p1 p2 in
        if x <> 0 then x else (B.compare q1 q2)
 
-  let pp (ppx : A.t Format.pp) (ppc : B.t Format.pp) fmt ((p, q) : t) =
-    Format.fprintf fmt "(%a, %a)" ppx p ppc q
+  let pp fmt ((p, q) : t) =
+    Format.fprintf fmt "(%a, %a)" A.pp p B.pp q
 end
 
 

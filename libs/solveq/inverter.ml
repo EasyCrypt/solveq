@@ -46,6 +46,7 @@ end = struct
       (* Here p = v*p1+p2 *)
       (p1,p2)
 
+  module C = Converter(R)(S)
   (* given a function v1,..,vn -> p1,...,pn, computes f:x1,...,xn -> e1,..,en such that
      f(p1,...,pn) = v1,...,vn *)
   let inverter_tuple (vars:var list) (pols:S.t list) : S.t list=
@@ -65,7 +66,18 @@ end = struct
             
         ) vars
     in  
-    inverters
+
+    (* must check in deduc if the reduced form contains only -t elements *)
+    let private_vars = (VarSet.of_list vars) in (* we thus define every variables as private, not know to the adversary *)
+    Format.printf "START map@.";
+    List.map (fun poly ->
+          let module M = Map.Make(X) in
+          let varset = C.varset poly in
+          List.iter (fun v -> Format.printf "var %a@." Var.pp v) (VarSet.to_list varset);
+          List.iter (fun v -> Format.printf "priv %a@." Var.pp v) (VarSet.to_list private_vars);
+          if VarSet.is_empty (VarSet.inter varset private_vars) then (S.(~!) poly)
+              else raise NoInv ) inverters
+
 end
 
 module InvertRing(R : Field)(S : Monalg.MonAlgebra with type ring = R.t and type mon = X.t) = struct
@@ -99,16 +111,9 @@ module InvertRing(R : Field)(S : Monalg.MonAlgebra with type ring = R.t and type
       let vars = vs and pols =  List.map C.ring_to_monalg rs in
       
       let inverters = Inv.inverter_tuple vars pols in
-      (* must check in deduc if the reduced form contains only -t elements *)
-      let private_vars = (VarSet.of_list vars) in (* we thus define every variables as private, not know to the adversary *)
-      Some(
-        List.map (fun poly ->
-          let module M = Map.Make(X) in
-          let varset = C.varset poly in
-          if VarSet.is_empty (VarSet.inter varset private_vars) then (C.monalg_to_ring (S.(~!) poly))
-              else raise NoInv ) inverters
-      )
-with NoInv -> None
+
+      Some( List.map C.monalg_to_ring inverters)
+    with NoInv -> None
   end
 
 

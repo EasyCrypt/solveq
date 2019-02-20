@@ -20,7 +20,7 @@ module Var : sig
   val make_rnd : var -> var
   val make_det : var -> var
   val make_fresh : var -> var
-  val pp :  Core.Format.formatter -> var -> unit
+  val pp :  var Format.pp
 end
 
 (* Abstract types for abelian group or ring *)
@@ -63,7 +63,7 @@ module X : sig  (* module for monomials *)
   exception DivFailure
   val ( */ ) : Core.Set.Make(Var).t -> t -> t -> t
   val lcm : t -> t -> t
-  val pp : Var.t Core.Format.pp -> t Core.Format.pp
+  val pp : t Core.Format.pp
 end
     
 module S :Monalg.MonAlgebra with type ring = R.t and type mon = X.t
@@ -82,7 +82,7 @@ module SB : sig (* module for polynomials over finite field of characteristic 2 
   val compare : t Core.Ord.comp
   val form : ring -> mon -> t
   val split : t -> ((mon * ring) * t) option
-  val pp : X.t Core.Format.pp -> B.t Core.Format.pp -> t Core.Format.pp
+  val pp : t Core.Format.pp
 end
 
 module P : Monalg.ProductAlgebra with type ringA = S.t and type ringB = S.t
@@ -104,9 +104,7 @@ module Converter : functor
                            val compare : t Core.Ord.comp
                            val form : ring -> mon -> t
                            val split : t -> ((mon * ring) * t) option
-                           val pp :
-                             mon Core.Format.pp ->
-                             ring Core.Format.pp -> t Core.Format.pp
+                           val pp : t Core.Format.pp
                          end) ->
   sig
     val ring_to_monalg : ?rndvars:Set.Make(Var).t -> ring -> S.t

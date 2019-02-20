@@ -31,7 +31,6 @@ struct
               VarSetSet.union acc (VarSetSet.map (fun set -> VarSet.add var set) acceptable_subsets)
           ) p VarSetSet.empty
     
-
   
   let naive_is_unif (pols : S.t list) (rndvars : Set.Make(Var).t) =
     (* given pols based on some randomvars (included in rndvars) and other vars, try to find a set of random variables which makes pols uniform *)
@@ -47,6 +46,10 @@ struct
           let p,q =VarSetSet.pop varsubsets in             
           try
             let inverters = I.inverter_tuple (VarSet.to_list p) pols in
+            List.iter (fun p -> Format.printf "p = %a@." Var.pp p) (VarSet.to_list p);
+            List.iter (fun p -> Format.printf "pol = %a@." S.pp p) pols;
+            List.iter (fun p -> Format.printf "inv = %a@." S.pp p) inverters;
+            
             true
           with NoInv -> is_unif q
           end

@@ -92,10 +92,10 @@ let rec pp_ring fmt r : unit =
   match r with
   | ZeroR -> Format.pp_print_int fmt 0
   | UnitR -> Format.pp_print_int fmt 1
-  | OppR(r) -> Format.pp_print_string fmt "-"; pp_ring fmt r
-  | AddR(r1,r2) -> pp_ring fmt r1; Format.pp_print_string fmt "+"; pp_ring fmt r2
-  | MultR(r1,r2) -> pp_ring fmt r1; Format.pp_print_string fmt "*"; pp_ring fmt r2
-  | InvR(r) -> Format.pp_print_string fmt "1/"; pp_ring fmt r
+  | OppR(r) -> Format.fprintf fmt "(- %a)" pp_ring r
+  | AddR(r1,r2) -> Format.fprintf fmt "@[(%a +@ %a)@]" pp_ring r1 pp_ring r2
+  | MultR(r1,r2) -> Format.fprintf fmt "@[(%a *@ %a)@]" pp_ring r1 pp_ring r2
+  | InvR(r) -> Format.fprintf fmt "(1/%a)" pp_ring r
   | VarR(var) -> Var.pp fmt var
 
 module R = Monalg.IntField

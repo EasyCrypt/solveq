@@ -51,15 +51,21 @@ We exctract from those combinations boundvars,boundpols,unboundpol where boundva
     let boundvars, boundpols, unboundpols,witnesses = get_dependencies pols detvars rndvars in
     (* we should now analyze the unbound polynomials, to see if they preserve interference *)
     if unboundpols = [] then
-      boundvars,witnesses
+      (Format.printf "ICI1@."; boundvars,witnesses)
     else
       begin
         (* reasonable hypothesis at this point, unboundpols is independent from (detvars/boundvars) *)
         let rndvarsboundpol = List.fold_left  (fun acc pol -> VarSet.union (C.varset pol) acc) VarSet.empty boundpols in
-        
-        if U.naive_is_unif unboundpols (VarSet.diff rndvars rndvarsboundpol) then
+        List.iter (fun v -> Format.printf " %a " Var.pp  v)  (VarSet.to_list rndvarsboundpol);
+        Format.printf "@.";  
+        let diff = VarSet.diff rndvars rndvarsboundpol in
+        List.iter (fun v -> Format.printf " %a " Var.pp  v)  (VarSet.to_list diff);
+        Format.printf "@.";  
+        if U.naive_is_unif unboundpols diff then
           (* if the unbound pols are uniform, they reveal nothing about the remaining variables. The only bound variables as thus the ones found previously. *)
-          boundvars,witnesses
+          (Format.printf "ICI2@."; boundvars,witnesses)
+
+      
         else
           (* should develop here for more complete methods*)
           raise RemainderNotUniform
