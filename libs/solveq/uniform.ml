@@ -58,6 +58,15 @@ struct
             let inverters = I.inverter_tuple (VarSet.to_list p) newpols in
             (* we reset the status of the variables *)
             VarSet.iter (fun v -> Var.make_rnd v; ()) rndvars;             
+            Format.printf "    -> uniformity witness: ( ";
+            VarSet.iter (fun r -> Format.printf " %a " Var.pp r) newrndvars;
+            Format.printf "->";
+            List.iter (fun r -> Format.printf " %a " S.pp r) newpols;
+            Format.printf ") (";
+            List.iteri (fun i _ -> Format.printf " %a " Var.pp (Var.make_fresh (Var.of_int (i+1)))) inverters;
+            Format.printf "->";
+            List.iter (fun r -> Format.printf " %a " S.pp r) inverters;
+            Format.printf ")@.";
             true
           with NoInv -> is_unif q
           end
