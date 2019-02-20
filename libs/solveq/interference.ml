@@ -41,16 +41,17 @@ We exctract from those combinations boundvars,boundpols,unboundpol where boundva
           basis in
       let boundvarpol = List.fold_left (fun acc pol -> VarSet.union (C.varset pol) acc) VarSet.empty res in
       let boundvar = VarSet.inter boundvarpol detvars in
-    let boundpol,unboundpol = VarMap.partition (fun varpol pol -> VarSet.mem varpol boundvarpol) (!map) in
+    let boundpol,unboundpol = VarMap.partition (fun varpol pol -> VarSet.mem varpol boundvarpol) (!map)
+    in
     let tolist = fun x -> List.map (fun (u,v) -> v) (VarMap.bindings x) in
-    VarSet.to_list boundvar, tolist boundpol, tolist unboundpol
+    VarSet.to_list boundvar, tolist boundpol, tolist unboundpol, res
       
   let check_indep (pols : S.t list) (detvars : Set.Make(Var).t) (rndvars : Set.Make(Var).t) =
     (* we first collect the dependencies *)
-    let boundvars, boundpols, unboundpols = get_dependencies pols detvars rndvars in
+    let boundvars, boundpols, unboundpols,witnesses = get_dependencies pols detvars rndvars in
     (* we should now analyze the unbound polynomials, to see if they preserve interference *)
     if unboundpols = [] then
-      boundvars
+      boundvars,witnesses
     else
       begin
         (* reasonable hypothesis at this point, unboundpols is independent from (detvars/boundvars) *)
@@ -58,7 +59,7 @@ We exctract from those combinations boundvars,boundpols,unboundpol where boundva
         
         if U.naive_is_unif unboundpols (VarSet.diff rndvars rndvarsboundpol) then
           (* if the unbound pols are uniform, they reveal nothing about the remaining variables. The only bound variables as thus the ones found previously. *)
-          boundvars
+          boundvars,witnesses
         else
           (* should develop here for more complete methods*)
           raise RemainderNotUniform
