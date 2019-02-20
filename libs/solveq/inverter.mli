@@ -3,6 +3,7 @@ open Types
 module InvertMonalg : functor
   (R : Monalg.Field) (S : Monalg.MonAlgebra with type ring = R.t and type mon = X.t) ->
   sig
+    val split_pol : var -> S.t -> S.t * S.t
     val euclidian_div : var -> S.t -> S.t * S.t
     val inverter_tuple : var list -> S.t list -> S.t list
   end

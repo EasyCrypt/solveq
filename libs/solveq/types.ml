@@ -66,8 +66,7 @@ module Var = struct
   let pp format v =
     if v.priority = rnd_priority then Format.pp_print_string format "#";
     if v.priority = fresh_priority then Format.pp_print_string format "~";
-    Format.pp_print_string format v.name
- 
+    Format.printf "%s(%i)" v.name v.id 
 end
 
 module VarSet = Set.Make(Var) 

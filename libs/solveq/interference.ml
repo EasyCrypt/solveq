@@ -13,7 +13,7 @@ struct
   module GB = GroebnerBasis.ProdGB(R)(S)(P)
   module VarMap = Map.Make(Var)
   module VarSet = Set.Make(Var)
-      
+  module I = Inverter.InvertMonalg(R)(S)    
   module U = Uniform.Unif(R)(S)(P)
 
   let is_witness (p : S.t) (rndvars) detvars =
@@ -31,7 +31,35 @@ struct
       linear_indep p detvars
     )
 
-  
+  (* we get the variables v such that P = vQ or P = (1+v)Q *)
+  let v_mult_dep p detvars =
+    Format.printf "exbpol : %a@." S.pp p;
+    List.iter (fun v -> Format.printf "detvar %a@." Var.pp v) (VarSet.to_list detvars);
+    let rec var_factor (p : S.t) =
+      match S.split p with
+      | None -> VarSet.empty
+      | Some((x,r),q) ->
+        match S.split q with
+        | None -> X.varset x
+        | Some(_) -> VarSet.inter (X.varset x) (var_factor q)
+    in
+    (* we start by getting the vars such that P = vQ *)
+    let multdepvar = VarSet.inter (var_factor p) detvars in
+     List.iter (fun v -> Format.printf "detvar %a@." Var.pp v) (VarSet.to_list multdepvar);
+    (* we set ovars to possible candidates such that P=(1+v)Q *)
+     let ovars = VarSet.inter (C.varset p) (VarSet.diff detvars multdepvar) in
+         List.iter (fun v -> Format.printf "ovar1 %a@." Var.pp v) (VarSet.to_list ovars);
+    (* we only keep ovars such that P = Q+ vQ *)
+         let ovars = VarSet.filter (fun v -> let p1,p2 = I.euclidian_div v p in
+    Format.printf "p1 : %a@." S.pp p1;
+
+       Format.printf "p2 : %a@." S.pp p2;
+
+                                     S.eq p1 p2) ovars in
+                  List.iter (fun v -> Format.printf "ovar2 %a@." Var.pp v) (VarSet.to_list ovars);
+    VarSet.union multdepvar ovars
+    
+      
   (* Given a list of polynoms pols, depending on deterministic variables detvars and random variables rndvars, computes all combinations of pols and deterministic variables such that it is equal to something only over deterministic variables.
 Those combinations corresponds to dependencies between some polynoms and determnistic variables. 
 We exctract from those combinations boundvars,boundpols,unboundpol where boundvars are the variable whose distribution is not independent from the distribution of boundpols. unboundpols are polynomials that depends on random variables, but might still reveal some informations on the deterministic variables.
@@ -56,12 +84,24 @@ We exctract from those combinations boundvars,boundpols,unboundpol where boundva
       let boundvar = VarSet.inter boundvarpol detvars in
     let boundpol,unboundpol = VarMap.partition (fun varpol pol -> VarSet.mem varpol boundvarpol) (!map)
     in
+    (* we now try to collect more depencies, for polynoms leaking variables v with P=vQ *)
+    let newboundvars = ref VarSet.empty in
+    let unboundpol,extraboundpol = VarMap.partition
+        (fun varpol pol ->
+           let vars = v_mult_dep pol detvars in
+           newboundvars := VarSet.union (!newboundvars) vars;
+           VarSet.is_empty vars
+        ) unboundpol in
+    let boundvar = VarSet.union boundvar (!newboundvars) in
     let tolist = fun x -> List.map (fun (u,v) -> v) (VarMap.bindings x) in
-    VarSet.to_list boundvar, tolist boundpol, tolist unboundpol, res
+    let boundpol = (tolist boundpol)@(tolist extraboundpol) and unboundpol = tolist unboundpol in
+    VarSet.to_list boundvar, boundpol, unboundpol, res
       
   let check_indep (pols : S.t list) (detvars : Set.Make(Var).t) (rndvars : Set.Make(Var).t) =
     (* we first collect the dependencies *)
     let boundvars, boundpols, unboundpols,witnesses = get_dependencies pols detvars rndvars in
+    List.iter (fun v -> Format.printf "ubpol : %a@." S.pp v) unboundpols;
+    List.iter (fun v -> Format.printf "bpol : %a@." S.pp v) boundpols;
     (* we should now analyze the unbound polynomials, to see if they preserve interference *)
     if unboundpols = [] then
       (Format.printf "ICI1@."; boundvars,witnesses)
@@ -69,10 +109,10 @@ We exctract from those combinations boundvars,boundpols,unboundpol where boundva
       begin
         (* reasonable hypothesis at this point, unboundpols is independent from (detvars/boundvars) *)
         let rndvarsboundpol = List.fold_left  (fun acc pol -> VarSet.union (C.varset pol) acc) VarSet.empty boundpols in
-        List.iter (fun v -> Format.printf " %a " Var.pp  v)  (VarSet.to_list rndvarsboundpol);
+        List.iter (fun v -> Format.printf "rndvarbpol %a " Var.pp  v)  (VarSet.to_list rndvarsboundpol);
         Format.printf "@.";  
         let diff = VarSet.diff rndvars rndvarsboundpol in
-        List.iter (fun v -> Format.printf " %a " Var.pp  v)  (VarSet.to_list diff);
+        List.iter (fun v -> Format.printf "vardiff %a " Var.pp  v)  (VarSet.to_list diff);
         Format.printf "@.";  
         if U.naive_is_unif unboundpols diff then
           (* if the unbound pols are uniform, they reveal nothing about the remaining variables. The only bound variables as thus the ones found previously. *)
