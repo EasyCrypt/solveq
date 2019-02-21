@@ -92,7 +92,7 @@ We exctract from those combinations boundvars,boundpols,unboundpol where boundva
     let boundvars, boundpols, unboundpols,witnesses = get_dependencies pols detvars rndvars in
     (* we should now analyze the unbound polynomials, to see if they preserve interference *)
     if unboundpols = [] then
-      boundvars,witnesses
+      boundvars,witnesses, `Uniform
     else
       begin
         (* reasonable hypothesis at this point, unboundpols is independent from (detvars/boundvars) *)
@@ -100,10 +100,10 @@ We exctract from those combinations boundvars,boundpols,unboundpol where boundva
         let diff = VarSet.diff rndvars rndvarsboundpol in
         if U.naive_is_unif unboundpols diff then
           (* if the unbound pols are uniform, they reveal nothing about the remaining variables. The only bound variables as thus the ones found previously. *)
-           boundvars,witnesses
+           boundvars,witnesses, `Uniform
         else
           (* should develop here for more complete methods*)
-          raise RemainderNotUniform
+          boundvars,witnesses, `RemainderNotUniform
       end
       
   let check_indep_ring (rings : ring list) (detvars : Set.Make(Var).t) (rndvars : Set.Make(Var).t) =
