@@ -13,20 +13,19 @@ open Core
 open Interference
 
 let var_pp = Var.pp;;
-let mon_pp = X.pp Var.pp;;
-let bi_pp fmt bi = Format.pp_print_int fmt  (Big_int.int_of_big_int bi);;
-let b_pp = B.pp bi_pp;;
-let r_pp = R.pp bi_pp;;
-let s_pp = S.pp mon_pp r_pp;;
-let p_pp = P.pp s_pp s_pp;;
-let sb_pp = SB.pp mon_pp b_pp;;
+let mon_pp = X.pp;;
+let b_pp = B.pp;;
+let r_pp = R.pp;;
+let p_pp = P.pp;;
+let s_pp = S.pp;;
+let sb_pp = SB.pp;;
 #install_printer var_pp;;
-#install_printer s_pp;;
 #install_printer p_pp;;
 #install_printer r_pp;;
 #install_printer bi_pp;;
 #install_printer sb_pp;;
 #install_printer mon_pp;;
+#install_printer s_pp;;
 (* polynomials displayed from biggest to monom to smallest *)
 
 

@@ -2,3 +2,4 @@
 /libs/solveq/_build/
 *#
 *~
+*.native
