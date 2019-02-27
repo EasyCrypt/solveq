@@ -3,7 +3,7 @@ open Core
 type var = {
   id : int;
   name: string;
-  mutable priority:int;
+  priority:int;
 }
 
 module V = struct
@@ -52,16 +52,13 @@ module Var = struct
   let to_int v = int_of_string v.name
 
   let make_rnd v =
-    v.priority <- rnd_priority;
-    v
+    {v with priority = rnd_priority}
 
   let make_det v =
-    v.priority <- det_priority;
-    v
+    {v with priority = det_priority}
   
   let make_fresh v =
-    v.priority <- fresh_priority;
-    v
+    {v with priority = fresh_priority}
 
   let pp format v =
     if v.priority = rnd_priority then Format.pp_print_string format "#";
@@ -175,15 +172,14 @@ struct
           else
             raise NoInv
         end
-
-
+        
   let varset (p:S.t) =
-    let module M = Map.Make(X) in
     let rec acc (q:S.t) =
       match (S.split q) with
       | None -> VarSet.empty
       | Some((x,m),r) -> VarSet.union (X.varset x) (acc r) in
-    acc p   
+    acc p    
+    
 end
 
 module C = Converter(R)(S)

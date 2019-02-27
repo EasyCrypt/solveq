@@ -31,14 +31,18 @@ struct
               VarSetSet.union acc (VarSetSet.map (fun set -> VarSet.add var set) acceptable_subsets)
           ) p VarSetSet.empty
 
-  let set_pols_rnd pols rndvars =
-    let vars = List.fold_left (fun acc p -> VarSet.union (C.varset p) acc ) VarSet.empty pols in
-    let detvars = VarSet.diff vars rndvars in
-    VarSet.iter (fun v -> Var.make_rnd v;()) rndvars;
-    VarSet.iter (fun v -> Var.make_det v;()) detvars;
-    (* here, we need to kind of reload the polynomials, or their order is not updated... *)
-    let pols = List.map (fun p -> S.( *! ) (S.unit) p) pols in
-    pols,rndvars
+
+  module M = Map.Make(Var)
+  let rec set_mon_rnd  mon rndvars = (* are the VarSet in the following correct ? Need to check if mem uses the eq of Var, but probably not ... *)
+    let map = X.tomap mon in
+    let nmap = M.fold (fun v i acc -> if VarSet.mem v rndvars then M.add (Var.make_rnd v) i acc else M.add (Var.make_det v) i acc ) map M.empty in
+    X.ofmap nmap
+      
+
+  let rec set_pol_rnd pol rndvars =
+    match (S.split pol) with
+    |None -> S.zero
+    |Some((mon,r),remainder) -> S.( +! ) (S.form r (set_mon_rnd mon rndvars)) (set_pol_rnd remainder rndvars)
 
   let naive_is_unif (pols : S.t list) (rndvars : Set.Make(Var).t) =
     (* given pols based on some randomvars (included in rndvars) and other vars, try to find a set of random variables which makes pols uniform *)
@@ -54,8 +58,8 @@ struct
           let p,q =VarSetSet.pop varsubsets in
           (* we change the status of the different variables to concord with the current subset *)
           try
-            let newpols,newrndvars = set_pols_rnd pols p in
-            let inverters = I.inverter_tuple (VarSet.to_list p) newpols in
+            let newpols = List.map (fun pol -> set_pol_rnd pol p) pols and newrndvars = VarSet.map Var.make_rnd p in
+            let inverters = I.inverter_tuple (VarSet.to_list newrndvars) newpols in
             (* we reset the status of the variables *)
             VarSet.iter (fun v -> Var.make_rnd v; ()) rndvars;             
             Format.printf "    -> uniformity witness: ( ";

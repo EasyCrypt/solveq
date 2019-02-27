@@ -5,7 +5,7 @@ open Core
 type var = {
   id : int;
   name: string;
-  mutable priority:int;   (* used to specify that some variables are greater than others *)
+  priority:int;   (* used to specify that some variables are greater than others *)
 }
 
 module Var : sig

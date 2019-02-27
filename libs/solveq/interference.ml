@@ -103,7 +103,11 @@ We exctract from those combinations boundvars,boundpols,unboundpol where boundva
            boundvars,witnesses, `Uniform
         else
           (* should develop here for more complete methods*)
-          boundvars,witnesses, `RemainderNotUniform
+          (
+            (* Format.printf "not unif:" ;
+            List.iter (fun v -> Format.printf " (%a) " S.pp v)  unboundpols;    
+               Format.printf "@." ; *)
+          boundvars,witnesses, `RemainderNotUniform)
       end
       
   let check_indep_ring (rings : ring list) (detvars : Set.Make(Var).t) (rndvars : Set.Make(Var).t) =
