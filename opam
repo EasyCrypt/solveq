@@ -4,11 +4,6 @@ homepage: "https://gforge.inria.fr/projects/solveq"
 bug-reports: "https://gforge.inria.fr/projects/solveq"
 name: "solveq"
 version: "0.1"
-authors: [
-  "Benjamin Grégoire"
-  "Charlie Jacomme"
-  "Pierre-Yves Strub"
-]
 build: [
   [make "libs"]
 ]
