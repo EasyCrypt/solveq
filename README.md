@@ -15,8 +15,8 @@ opam packages : menhir, batteries, num
 ## Main Commands
 
 `$make install` installs the ocaml library.
-`$make main` compile a small parser only interfaced with inverse and uniformity for rings can be compiled using.
-`$make tests` run a small test file based on the parser. 
+`$make main` compiles a small parser only interfaced with inverse and uniformity for rings.
+`$make tests` run small test file based on the parser. 
 
 ## Interface 
 
