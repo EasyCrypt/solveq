@@ -111,6 +111,32 @@ module PB = Monalg.ProdAlg(SB)(SB)
 exception NoInv
 
 
+
+let simp_ring (r:ring) =
+  match r with
+  | MultR(UnitR,r1) -> r1
+  | MultR(r1,UnitR) -> r1
+  | AddR(ZeroR,r1) -> r1
+  | AddR(r1,ZeroR) -> r1    
+  |r -> r
+
+let frac_to_ring (r:ring) = 
+  let rec sfrac_to_ring (r:ring) =
+    match r with
+    |MultR( r1, r2) -> let p1,q1 = sfrac_to_ring r1 and p2,q2 = sfrac_to_ring r2 in
+      (MultR(p1,p2),MultR(q1,q2))
+    | InvR(r1) ->  let p1,q1 = sfrac_to_ring r1 in
+      (q1,p1)
+    | AddR (r1,r2) ->  let p1,q1 = sfrac_to_ring r1 and p2,q2 = sfrac_to_ring r2 in
+      if q1 =q2 then
+        (AddR(p1,p2),q1)
+      else raise NoInv
+    | r -> (r, UnitR)
+  in
+  let p,q = (sfrac_to_ring r) in
+  simp_ring p,simp_ring q
+         
+
       
 module Converter(R : Monalg.Ring)(S : Monalg.MonAlgebra with type ring = R.t and type mon = X.t) : sig
   val ring_to_monalg : ?rndvars:VarSet.t -> ring -> S.t
@@ -126,7 +152,7 @@ struct
     | OppR r1 -> S.(~!) (ring_to_monalg ~rndvars:(rndvars) r1)
     | AddR (r1,r2) -> S.(+!) (ring_to_monalg ~rndvars:(rndvars) r1) (ring_to_monalg ~rndvars:(rndvars) r2)
     | MultR (r1,r2)-> S.( *! ) (ring_to_monalg ~rndvars:(rndvars) r1) (ring_to_monalg ~rndvars:(rndvars) r2)
-    | InvR r1 -> raise NoInv
+    | InvR _ -> raise NoInv
     | VarR x -> let pvar = if VarSet.exists (fun r -> Var.eq x r) rndvars then Var.make_rnd x else x in
       S.form (R.unit) (X.ofvar pvar)
 

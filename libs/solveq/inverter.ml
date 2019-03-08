@@ -92,7 +92,26 @@ module InvertRing(R : Field)(S : Monalg.MonAlgebra with type ring = R.t and type
       match p1 with
       |UnitR -> Some(AddR(VarR v, OppR(p2)))
       |_ -> Some(MultR(AddR(VarR v, OppR(p2)), InvR(p1))) (* we return a fraction, might be necessary to check that inv not null *)      
-    with NoInv -> None
+    with NoInv ->
+
+    try
+      let p,q = frac_to_ring r in
+      if q = VarR v then
+        Some( MultR( VarR v, InvR(p)))
+      else
+        None
+  (*let p,q = C.ring_to_monalg p,C.ring_to_monalg q in
+      let (p1,p2) = Inv.euclidian_div v p in
+      let (q1,q2) = Inv.euclidian_div v q in
+      let p1 = C.monalg_to_ring p1 and p2 = C.monalg_to_ring p2 and  q1 = C.monalg_to_ring p1 and q2 = C.monalg_to_ring q2
+      in
+      Format.fprintf "%a %a %a %a" pp_ring p1 pp_ring p2 pp_
+      if p1 = ZeroR && q2 = ZeroR && q1 = UnitR then  (* r = p2/x *)
+  Some( MultR( VarR v, InvR(q2)))
+    else None *)
+
+      
+      with NoInv -> None
 
   (* Given a list of ring element rs = r1,...,rn depending on a list of variables 
       vs = v1,...,vn , tries to compute the inverse of

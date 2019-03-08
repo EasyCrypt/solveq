@@ -40,7 +40,9 @@ type ring =
   | VarR of var
 
 val pp_ring : Core.Format.formatter -> ring -> unit
-  
+
+val frac_to_ring : ring -> ring * ring
+
 exception NoInv
 
 (* Types for polynoms in normal form over IntField *)

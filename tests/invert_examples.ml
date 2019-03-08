@@ -42,6 +42,8 @@ let g2 = Add(Var v1,Opp(Var v2));;
 compute_inv v1 g2;;
 
 
+let g3 = MultR( g2, InvR(VarR v3));;
+
 
 let pol = AddR( MultR(VarR v1,VarR v2),VarR v3  );;
 
