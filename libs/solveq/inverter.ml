@@ -96,8 +96,8 @@ module InvertRing(R : Field)(S : Monalg.MonAlgebra with type ring = R.t and type
 
     try
       let p,q = frac_to_ring r in
-      if q = VarR v then
-        Some( MultR( VarR v, InvR(p)))
+      if p = VarR v then
+        Some( MultR(VarR v,q))
       else
         None
   (*let p,q = C.ring_to_monalg p,C.ring_to_monalg q in
