@@ -49,7 +49,23 @@ struct
          let ovars = VarSet.filter (fun v -> let p1,p2 = I.euclidian_div v p in S.eq p1 p2) ovars in
     VarSet.union multdepvar ovars
     
-      
+  (* try to divide as much as possible p by either v or v+1 *)
+  let rec div_by_dets p detvars =
+    let rec aux p detvars boundvars =
+      if VarSet.is_empty detvars then
+        p,boundvars
+      else
+        (
+          let var, ndetvars = VarSet.pop detvars in
+          let p1,p2 = I.euclidian_div var p in
+          if S.eq p1 p2 || S.eq p2 S.zero then (* if p = (v+1)p1 or p = vp1 *)
+            aux p1 ndetvars (VarSet.add var boundvars)
+          else
+            aux p ndetvars boundvars
+        )
+    in
+    aux p detvars VarSet.empty
+  
   (* Given a list of polynoms pols, depending on deterministic variables detvars and random variables rndvars, computes all combinations of pols and deterministic variables such that it is equal to something only over deterministic variables.
 Those combinations corresponds to dependencies between some polynoms and determnistic variables. 
 We exctract from those combinations boundvars,boundpols,unboundpol where boundvars are the variable whose distribution is not independent from the distribution of boundpols. unboundpols are polynomials that depends on random variables, but might still reveal some informations on the deterministic variables.
@@ -74,17 +90,20 @@ We exctract from those combinations boundvars,boundpols,unboundpol where boundva
       let boundvar = VarSet.inter boundvarpol detvars in
     let boundpol,unboundpol = VarMap.partition (fun varpol pol -> VarSet.mem varpol boundvarpol) (!map)
     in
-    (* we now try to collect more depencies, for polynoms leaking variables v with P=vQ *)
+    (* we now try to collect more depencies, for polynoms leaking variables v with P=vQ or P=(v+1)Q *)
     let newboundvars = ref VarSet.empty in
-    let unboundpol,extraboundpol = VarMap.partition
-        (fun varpol pol ->
-           let vars = v_mult_dep pol detvars in
-           newboundvars := VarSet.union (!newboundvars) vars;
-           VarSet.is_empty vars
-        ) unboundpol in
+    let reduceunboundpol = VarMap.fold
+        (fun varpol pol l ->
+           let p, nboundvars = div_by_dets pol detvars in
+           newboundvars := VarSet.union (!newboundvars) nboundvars;
+           p::l
+        )  unboundpol [] in
     let boundvar = VarSet.union boundvar (!newboundvars) in
+    (* from the boundvariables, we now split the reduce unbound pols into polynomaisl that are bound (no det variables unbound) or that may need to be uniform *)
+    let extraboundpol,unboundpol = List.partition  (fun pol -> VarSet.subset (VarSet.inter detvars (C.varset pol)) (boundvar) ) reduceunboundpol in
     let tolist = fun x -> List.map (fun (u,v) -> v) (VarMap.bindings x) in
-    let boundpol = (tolist boundpol)@(tolist extraboundpol) and unboundpol = tolist unboundpol in
+    
+    let boundpol = (tolist boundpol)@(extraboundpol) and unboundpol = unboundpol in
     VarSet.to_list boundvar, boundpol, unboundpol, res
       
   let check_indep (pols : S.t list) (detvars : Set.Make(Var).t) (rndvars : Set.Make(Var).t) =
@@ -92,15 +111,21 @@ We exctract from those combinations boundvars,boundpols,unboundpol where boundva
     let boundvars, boundpols, unboundpols,witnesses = get_dependencies pols detvars rndvars in
     (* we should now analyze the unbound polynomials, to see if they preserve interference *)
     if unboundpols = [] then
-      boundvars,witnesses, `Uniform
+      if List.for_all (fun pol -> VarSet.subset (C.varset pol) (VarSet.of_list boundvars) ) boundpols then
+        boundvars,witnesses, `Uniform
+      else
+        boundvars,witnesses, `NotAllDependenciesFound
     else
       begin
         (* reasonable hypothesis at this point, unboundpols is independent from (detvars/boundvars) *)
         let rndvarsboundpol = List.fold_left  (fun acc pol -> VarSet.union (C.varset pol) acc) VarSet.empty boundpols in
         let diff = VarSet.diff rndvars rndvarsboundpol in
         if U.naive_is_unif unboundpols diff then
-          (* if the unbound pols are uniform, they reveal nothing about the remaining variables. The only bound variables as thus the ones found previously. *)
-           boundvars,witnesses, `Uniform
+          (* if the unbound pols are uniform, they reveal nothing about the remaining variables. The only bound variables as thus the ones found previously, if the boundpol only reveal them. *)
+          if List.for_all (fun pol -> VarSet.subset (VarSet.inter detvars (C.varset pol)) (VarSet.of_list boundvars) ) boundpols then
+            boundvars,witnesses, `Uniform
+          else
+            boundvars,witnesses, `NotAllDependenciesFound
         else
           (* should develop here for more complete methods*)
           (
