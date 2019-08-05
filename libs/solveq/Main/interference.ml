@@ -13,7 +13,7 @@ struct
   module GB = GroebnerBasis.ProdGB(R)(S)(P)
   module VarMap = Map.Make(Var)
   module VarSet = Set.Make(Var)
-  module I = Inverter.InvertMonalg(R)(S)    
+  module I = Ring_inverter.InvertMonalg(R)(S)    
   module U = Uniform.Unif(R)(S)(P)
 
   let is_witness (p : S.t) (rndvars) detvars =

@@ -1,73 +1,5 @@
 open Core
-
-type var = {
-  id : int;
-  name: string;
-  priority:int;
-}
-
-module V = struct
-  type t = var
-    
-  let eq v1 v2 = v1.id == v2.id  (* we only compare ids, the rest should not influence equality *)
-
-  let compare v1 v2 =
-    if v1.id = v2.id then
-      0
-    else if v1.priority = v2.priority then
-      v1.id - v2.id
-    else
-      v1.priority - v2.priority
-end
-
-module Var = struct
-  include V
-
-  module M = Map.Make(String)
-      
-  let fresh_priority = 0
-  let det_priority = 1
-  let rnd_priority =2
-    
-  let id = ref 0
-  let map = ref M.empty
-      
-  let of_string (s:string) = (* we create a fresh id for each new string, using a map to rember the link between strings and variables *)
-    try M.find s (!map)
-    with Not_found ->
-      let p = { id = !id; name = s; priority=det_priority } in
-      incr id;
-      map := M.add s p (!map);
-      p 
-
-  let of_int i =
-    of_string (string_of_int i)
-
-  let of_id i =
-    let p = { id = i; name = (string_of_int i); priority=det_priority } in
-    p
-    
-  let to_string v = v.name
-
-  let to_int v = int_of_string v.name
-
-  let make_rnd v =
-    {v with priority = rnd_priority}
-
-  let make_det v =
-    {v with priority = det_priority}
-  
-  let make_fresh v =
-    {v with priority = fresh_priority}
-
-  let pp format v =
-    if v.priority = rnd_priority then Format.pp_print_string format "#";
-    if v.priority = fresh_priority then Format.pp_print_string format "~";
-    Format.fprintf format "%s" v.name
-end
-
-module VarSet = Set.Make(Var) 
-module VarMap = Map.Make(Var) 
+open Monalg
     
 type group = 
   | Zero
@@ -102,23 +34,7 @@ type dhgroup =
   | ExpG of dhgroup * ring           
 
 
-module R = Monalg.IntField
-
-module B = Monalg.BoolField
-
-module X = Monalg.Multinom(Var)  (* the monomials over variables *)
-    
-module S = Monalg.MonAlg(X)(R) (* polynomials over intfield *)
-
-module SB = Monalg.MonAlg(X)(B) (* polynomials over field of caracteristic 2 *)
-
-module P = Monalg.ProdAlg(S)(S)
-
-module PB = Monalg.ProdAlg(SB)(SB)
-
 exception NoInv
-
-
 
 let simp_ring (r:ring) =
   match r with

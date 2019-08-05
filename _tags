@@ -6,14 +6,15 @@ true : use_menhir, menhir_explain
 
 # --------------------------------------------------------------------
 <libs>: include
+<libs/solveq/*>: include
 
-<libs/solveq/*.{ml,mli}>: package(batteries,menhirLib,num)
-<libs/solveq/*.{cmo,cmx}>: for-pack(Solveq)
+<libs/solveq/**/*.{ml,mli}>: package(batteries,menhirLib,num)
+<libs/solveq/**/*.{cmo,cmx}>: for-pack(Solveq)
 
 
 # --------------------------------------------------------------------
-<libs/solveq/main.native> : package(batteries,menhirLib,num)
-<libs/solveq/main.native> : include
+<libs/solveq/Main/main.native> : package(batteries,menhirLib,num)
+<libs/solveq/Main/main.native> : include
 
 # --------------------------------------------------------------------
 <tests/*.{ml,mli}> : package(batteries,menhirLib,num)

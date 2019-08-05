@@ -1,8 +1,8 @@
 PRJ solveq
 
-S .
+S **
 B ../../_build/libs/solveq
-B ../../_build/libs
+B ../../_build/libs/**
 
 FLG -rectypes
 FLG -w a

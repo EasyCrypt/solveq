@@ -1,13 +1,13 @@
 open Core
 open Monalg
 open Types
-open Inverter
+open Ring_inverter
 
 module Unif(R : Field)(S : Monalg.MonAlgebra with type ring = R.t and type mon = X.t)(P : Monalg.ProductAlgebra with type ringA = S.t and type ringB = S.t)
 =
 struct
   module C = Converter(R)(S)
-  module I = Inverter.InvertMonalg(R)(S)
+  module I = Ring_inverter.InvertMonalg(R)(S)
       
   module GB = GroebnerBasis.ProdGB(R)(S)(P)
   module VarSet = Set.Make(Var)

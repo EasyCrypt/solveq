@@ -1,6 +1,7 @@
 open Core
 open Io
 open Location
+open Monalg
 open Types
 open Uniform
     

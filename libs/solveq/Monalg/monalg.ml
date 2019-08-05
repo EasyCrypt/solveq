@@ -429,3 +429,16 @@ module ProdAlg(A : Ring)(B : Ring) : ProductAlgebra with type ringA = A.t and ty
 end
 
 
+module R = IntField
+
+module B = BoolField
+
+module X = Multinom(Var)  (* the monomials over variables *)
+    
+module S = MonAlg(X)(R) (* polynomials over intfield *)
+
+module SB = MonAlg(X)(B) (* polynomials over field of caracteristic 2 *)
+
+module P = ProdAlg(S)(S)
+
+module PB = ProdAlg(SB)(SB)

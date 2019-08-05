@@ -5,7 +5,7 @@
 open Core
 open Num.TaggedInfix
 open Monalg
-open Types
+
      
 module VarSet = Set.Make(Var)         (* the set of private variables *)
 
