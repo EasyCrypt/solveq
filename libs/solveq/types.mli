@@ -39,6 +39,13 @@ type ring =
   | InvR of ring
   | VarR of var
 
+type dhgroup =
+  | UnitG
+  | GenG
+  | InvG of dhgroup
+  | MultG of dhgroup * dhgroup
+  | ExpG of dhgroup * ring           
+
 val pp_ring : Core.Format.formatter -> ring -> unit
 
 val frac_to_ring : ring -> ring * ring

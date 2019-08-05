@@ -94,6 +94,14 @@ let rec pp_ring fmt r : unit =
   | InvR(r) -> Format.fprintf fmt "(1/%a)" pp_ring r
   | VarR(var) -> Var.pp fmt var
 
+type dhgroup =
+  | UnitG
+  | GenG
+  | InvG of dhgroup
+  | MultG of dhgroup * dhgroup
+  | ExpG of dhgroup * ring           
+
+
 module R = Monalg.IntField
 
 module B = Monalg.BoolField
