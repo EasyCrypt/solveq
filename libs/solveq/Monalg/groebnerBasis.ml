@@ -21,6 +21,10 @@ sig
   val syz : VarSet.t -> P.t list -> S.t list
 
 end = struct
+
+let print = Format.printf 
+
+  
   let is_zero ((p, q) : P.t) : bool =
     S.eq p S.zero
 
@@ -33,7 +37,8 @@ end = struct
     | None -> None
     | Some(((m2, c2), remainder)) -> 
       try
-        let x, r = (X.( */ ) priv m m2, R.( ~!)  (R.( /! ) c c2)) in Some(P.( *! ) (S.form r x, S.form r x) (remainder, q))
+        let x, r = (X.( */ ) priv m m2, R.( ~!)  (R.( /! ) c c2)) in
+        Some(P.( *! ) (S.form r x, S.form r x) (remainder, q))
       with X.DivFailure -> None
 
   (* ------------------------------------------------------------------------- *)
@@ -51,8 +56,10 @@ end = struct
   let rec reduce mp pols ((p, q) : P.t)=
     match (S.split p) with
     | None -> Some(p,q)
-    | Some(((m, c), remainder)) -> 
-      try  reduce mp pols (P.(+!) (reduceb  mp (m, c) pols) (remainder,q))
+    | Some(((m, c), remainder)) ->
+      try
+        let reducedpol = (P.(+!) (reduceb  mp (m, c) pols) (remainder,q)) in
+        reduce mp pols reducedpol
       with ReduceFailure -> 
       match (reduce mp pols (remainder, q)) with
       |None -> None

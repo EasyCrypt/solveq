@@ -7,6 +7,7 @@
 
 open Solveq
 open Types
+open Monalg
 open Inverter
 open GroebnerBasis
 open Core
@@ -27,22 +28,19 @@ let sb_pp = SB.pp;;
 #install_printer sb_pp;;
 #install_printer mon_pp;;
 
-let [v1;v2;v3;v4;v5;v6] = List.map (fun v-> Var.make_det (Var.of_int v)) [1;2;3;4;5;6];;
+let [v1;v2;v3;v4;v5;v6] = List.map (fun v-> Var.make_det (Var.of_string v)) ["v1";"v2";"v3";"v4";"v5";"v6"];;
 
 let g = Add(Var v1,Var v2);;
 
 compute_inv v1 g;;
 
 module C = Converter(R)(S)
-  module Inv = InvertMonalg(R)(S)
+
 
 
 let g2 = Add(Var v1,Opp(Var v2));;
 
 compute_inv v1 g2;;
-
-
-let g3 = MultR( g2, InvR(VarR v3));;
 
 
 let pol = AddR( MultR(VarR v1,VarR v2),VarR v3  );;

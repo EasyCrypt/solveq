@@ -123,13 +123,15 @@ end = struct
   let ( /? ) = Big_int.div_big_int
   let beq = Big_int.eq_big_int
   let bcompare = Big_int.compare_big_int
+  exception DivFailure
 
   let zero : t = (bzero, bunit)
   let unit : t = (bunit, bunit)
 
 
   let rec bgcd (u : v) (v : v) =
-  	if not (v == bzero) then (bgcd v (Big_int.mod_big_int u v)) else (Big_int.abs_big_int u) 
+    Big_int.gcd_big_int u v
+  (*  	if not (v == bzero) then (bgcd v (Big_int.mod_big_int u v)) else (Big_int.abs_big_int u) *)
 
   let blcm m n =
   	match m, n with
@@ -138,24 +140,32 @@ end = struct
 
   let norm ((p,q) : t) : t = 
     if beq p bzero then zero else 
-        let m = blcm p q in
-		    ((/?) p m, (/?) q m)		
+      let m = bgcd p q in
+      let (r1,r2) = ((/?) p m, (/?) q m) in
+      if bcompare bzero r2  < 0 then
+        (r1,r2)
+        else (( ~? ) r1, ( ~? r2))
 
   let ( +! ) ((p1, q1) : t) ((p2, q2) : t) : t =
 	norm ( (+?) ( ( *?) p1 q2) ( ( *? ) p2 q1), ( *? ) q1 q2) 
   let ( -! ) ((p1, q1) : t) ((p2, q2) : t) : t =
 	norm ( (-?) ( ( *?) p1 q2) ( ( *? ) p2 q1), ( *? ) q1 q2) 
   let ( ~! ) ((p, q) : t) =  ((~?) p, q)
+
+  let eq ((p1, q1) : t) ((p2, q2) : t) : bool = (beq p1 p2 && beq q1 q2)
+                                                || ((beq p1 ((~?) p2)) && beq  q1 ((~?) q2) )
+                                              || (beq p1 bzero && beq p2 bzero)
+  
   let ( *! ) ((p1, q1) : t) ((p2, q2) : t) : t =
 	norm (( *?) p1 p2, ( *? ) q1 q2) 
   let ( /! ) ((p1, q1) : t) ((p2, q2) : t) : t =
-	norm (( *?) p1 q2, ( *? ) q1 p2) 
+    if  beq p2 bzero then raise DivFailure
+	else norm (( *?) p1 q2, ( *? ) q1 p2) 
   
   let lcm ((p1, q1) : t) ((p2, q2) : t) : t = 
     norm (blcm p1 p2, ( *?) q1 q2)
    
-  let eq ((p1, q1) : t) ((p2, q2) : t) : bool = (beq p1 p2 && beq q1 q2)
-                                                || ((beq p1 ((~?) p2)) && beq  q1 ((~?) q2) )
+
   let compare ((p1, q1) : t) ((p2, q2) : t) : int = bcompare ( ( *? ) p1 q2) ( ( *? ) q1 p2)
 
   let pp (fmt : Format.formatter) ((p, q) : t) =

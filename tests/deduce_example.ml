@@ -44,12 +44,14 @@ let secrets = [AddR(VarR v1,VarR v2)];;
 DH.deduce_tuple [v2] known_dh secrets;;
 
 
-  
+  Big_int.compare_big_int (Big_int.unit_big_int) (Big_int.minus_big_int Big_int.unit_big_int);;
 
-  let known_dh = [ExpG (GenG,VarR v3); ExpG (GenG,VarR v2)];;
-    
-let secrets = [MultR((VarR v3),AddR(VarR v1,VarR v2))];;                 
+let known_dh = [MultG(ExpG (GenG,VarR v3),ExpG(GenG,OppR(VarR v2))); ExpG (GenG,VarR v2)];;
+
+let secrets = [MultR((VarR v3),VarR v4)];;                 
 
 DH.deduce_tuple [v3;v2] known_dh secrets;;
 
+let secrets = [MultR((VarR v1),AddR(VarR v3,VarR v2))];;                 
 
+DH.deduce_tuple [v3;v2] known_dh secrets;;
