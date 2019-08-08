@@ -31,7 +31,16 @@ type dhgroup =
   | GenG
   | InvG of dhgroup
   | MultG of dhgroup * dhgroup
-  | ExpG of dhgroup * ring           
+  | ExpG of dhgroup * ring
+
+type expr =
+  | Cst of functionsymbol  (* constant with unique identifier *)
+  | Fct of functionsymbol * expr list (* function with any arity *)                 
+  | Var of var
+  | Ring of ring
+  | Group of group
+  | DH of dhgroup
+      
 
 
 exception NoInv

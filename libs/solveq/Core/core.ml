@@ -59,6 +59,60 @@ module Format = struct
   type 'a pp = Format.formatter -> 'a -> unit
 end
 
+(* -------------------------------------------------------------------- *)
+module Comp  = struct
+    type t = {
+    id : int;
+    name : string;
+  }    
+  let eq (v1:t) (v2:t) = v1.id == v2.id  (* we only compare ids, the rest should not influence equality *)
+
+  let compare (v1:t) (v2:t) =
+      v1.id - v2.id
+
+end
+
+module Symbol = struct
+  include Comp
+
+  module M = Map.Make(String)
+      
+  let id = ref 0
+  let map = ref M.empty
+      
+  let of_string (s:string) = (* we create a fresh id for each new string, using a map to rember the link between strings and variables *)
+    try M.find s (!map)
+    with Not_found ->
+      let p = { id = !id; name = s} in
+      incr id;
+      map := M.add s p (!map);
+      p 
+
+  let of_int i =
+    of_string (string_of_int i)
+
+  let of_id i =
+    let p = { id = i; name = (string_of_int i)} in
+    p
+    
+  let to_string v = v.name
+
+  let to_int v = int_of_string v.name
+
+  let pp format v =
+    Format.fprintf format "%s" v.name
+end
+
+module Constant = Symbol
+type constant = Constant.t
+module CstSet = Set.Make(Constant) 
+module CstMap = Map.Make(Constant) 
+
+module FunctionSymbol = Symbol
+type functionsymbol = FunctionSymbol.t  
+module FunctionSymbolSet = Set.Make(FunctionSymbol) 
+module FunctionSymbolMap = Map.Make(FunctionSymbol) 
+
 (* --------------------------------------------------------------------- *)
 
 
