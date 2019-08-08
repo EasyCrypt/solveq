@@ -32,7 +32,7 @@ type dhgroup =
   | InvG of dhgroup
   | MultG of dhgroup * dhgroup
   | ExpG of dhgroup * ring
-
+(*
 type expr =
   | Cst of functionsymbol  (* constant with unique identifier *)
   | Fct of functionsymbol * expr list (* function with any arity *)                 
@@ -41,7 +41,7 @@ type expr =
   | Group of group
   | DH of dhgroup
       
-
+*)
 
 exception NoInv
 
@@ -143,3 +143,19 @@ end
 
 module C = Converter(R)(S)
     
+module Var = Core.Var
+
+module R = Monalg.R
+
+module B = Monalg.B
+
+module X = Monalg.X
+    
+module S = Monalg.S
+
+module SB = Monalg.SB
+
+module P = Monalg.P
+
+module PB = Monalg.PB
+
