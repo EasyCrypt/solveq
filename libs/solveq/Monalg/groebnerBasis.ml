@@ -129,7 +129,7 @@ end = struct
   let deduc priv basis secret =
     match (reduce priv basis secret) with
     |None -> None
-    |Some((p,q)) -> Some(S.( ~!) q)
+    |Some((p,q)) -> if (S.eq p S.zero) then Some(S.( ~!) q) else raise ReduceFailure
 end
 
 

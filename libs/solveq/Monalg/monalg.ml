@@ -226,7 +226,7 @@ end = struct
     let merge v i1 i2 =
       match i1, i2 with
       | None  , None   -> None
-      | Some _, None   -> i1
+      | Some _, None   -> if S.mem v s then raise DivFailure else i1
       | None  , Some _ -> raise DivFailure
       | Some x, Some y ->
           let xy = x - y  in 

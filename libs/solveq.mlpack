@@ -1,3 +1,16 @@
+Core/Core
+
+Monalg/Monalg
+Monalg/GroebnerBasis
+Monalg/Monalg_deduce
+Monalg/Monalg_interference
+Monalg/Monalg_uniform
+
+DHgroup/dh_deduce
+
+Ring/Ring_inverter
+Ring/Ring_uniform
+
 Main/Location
 Main/Lexer
 Main/Parser
