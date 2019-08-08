@@ -3,10 +3,18 @@
 ## Intro
 
 This library uses symbolic methods to solve probabilistic problems. 
-We currently handle, either for rings or rings of characteristic two:
- * computation of an inverse function;
- * when there exist an inverse function, decide uniformity;
- * decide independence from a set of variables, in the sub case where the unbound polynomials are uniform.
+The following operations are supported
+
+Monom Algebra over a ring (of characteristic zero or two):
+ * deducibility (through groebner basis computation) [1]
+
+Rings or rings of characteristic two:
+ * computation of an inverse function; [2]
+ * when there exist an inverse function, decide uniformity; [2]
+ * decide independence from a set of variables, in the sub case where the unbound polynomials are uniform. [2]
+
+Diffie-Hellman Group:
+ * deduction, for instances of the form X,g^h1,...,g^hn \- g^s1,...,g^sn, with h1,...,hn,s1,...,sn polynomials over some R[X,Y] [1]
 
 ## Requirements
 
@@ -27,3 +35,8 @@ The internal polynomial representation can be found in `monalg.ml`, and `groebne
 ## Examples
 
 The folder `tests` contains some ml files which are set up for use with the top level and the library, and contain some examples.
+
+## References
+
+[1] : Symbolic Proofs for Lattice-Based Cryptography. G Barthe, X Fan, J Gancher, B Grégoire, C Jacomme, E Shi
+[2] : Symbolic methods in computational cryptography proofs. G Barthe, B Grégoire, C Jacomme, S Kremer, PY Strub
