@@ -6,9 +6,6 @@ open Core
 open Num.TaggedInfix
 open Monalg
 
-     
-module VarSet = Set.Make(Var)         (* the set of private variables *)
-
 exception ReduceFailure
 
 (* ------------------------------------------------------------------------- *)
